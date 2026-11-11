@@ -32,3 +32,21 @@ describe('propiedades del motor', () => {
     expect(JSON.stringify(run(99))).toBe(JSON.stringify(run(99)));
   });
 });
+
+describe('bots', () => {
+  it('nunca generan jugadas ilegales y la partida conserva las losetas', async () => {
+    const { chooseBotMove } = await import('../src/ai/bot');
+    for (let seed = 1; seed <= 60; seed++) {
+      const n = 2 + (seed % 3);
+      const levels = Array.from({ length: n }, (_, i) => 1 + ((seed + i * 3) % 10));
+      const s = newGame(n, seed);
+      const rnd = createRng(seed);
+      while (s.phase === 'playing') {
+        const m = chooseBotMove(s, levels[s.current], rnd, { iterations: 60, budgetMs: 1e9 });
+        expect(isLegal(s, m)).toBe(true);
+        step(s, m);
+        expect(countTiles(s)).toBe(TOTAL_TILES);
+      }
+    }
+  });
+});

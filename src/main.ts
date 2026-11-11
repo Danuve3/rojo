@@ -1,6 +1,5 @@
 import './styles.css';
-import { createRng, randomSeed } from './engine';
-import { randomMove } from './ai/random';
+import { botProvider, createAiWorker, WorkerClient } from './ai/client';
 import { loadSettings } from './storage/settings';
 import { App } from './ui/app';
 import { services } from './ui/services';
@@ -16,8 +15,8 @@ import { setupScreen } from './ui/screens/setup';
 async function boot(): Promise<void> {
   await loadSettings();
   installTileSprite();
-  const rnd = createRng(randomSeed());
-  services.bots = () => ({ chooseMove: async (s) => randomMove(s, rnd, 0.8) });
+  const botWorker = new WorkerClient(createAiWorker);
+  services.bots = () => botProvider(botWorker);
   const app = new App(document.getElementById('app') as HTMLElement);
   app.register('home', homeScreen);
   app.register('setup', setupScreen);
