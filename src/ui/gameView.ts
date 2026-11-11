@@ -1,8 +1,8 @@
 import {
   type Bonus, FIRST_TOKEN, type FloorPenalty, floorPenalty, FLOOR_SIZE, type GameState, type Move, type Placement,
-  type Source, type Target, type TurnResult, validTargets, sum,
+  type Source, type Target, type TurnResult, validTargets, sum, rowCount, colCount, colorCount,
 } from '../engine';
-import { getSettings } from '../storage/settings';
+import { getSettings, onSettings, updateSettings } from '../storage/settings';
 import { buildBoard, type BoardView } from './board';
 import { boardSvg } from './boardSvg';
 import type { GameConfig } from './config';
@@ -67,6 +67,7 @@ export class GameView {
   private scoreShown: number[] = [];
   private tokenAtCenter = false;
   private pending: Target | null = null;
+  private offSettings: () => void = () => undefined;
 
   constructor(private config: GameConfig, private ev: ViewEvents) {
     const n = config.players.length;
@@ -99,11 +100,20 @@ export class GameView {
     this.hintPanel = h('div', { class: 'hint-panel', hidden: true });
     this.coachBar = h('div', { class: 'coachbar' }, this.hintBtn, this.status, this.undoBtn);
     this.fx = h('div', { class: 'fx-layer' });
+    const mute = h('button', { class: 'icon-btn sm', 'aria-label': 'Silenciar' });
+    const paintMute = () => {
+      const m = getSettings().muted;
+      mute.textContent = m ? '🔇' : '🔊';
+      mute.setAttribute('aria-pressed', String(m));
+    };
+    paintMute();
+    this.offSettings = onSettings(paintMute);
+    mute.addEventListener('click', () => updateSettings({ muted: !getSettings().muted }));
     const exit = h('button', { class: 'icon-btn', 'aria-label': 'Volver al inicio' }, '‹');
     exit.addEventListener('click', () => ev.onExit());
     const me = h('section', { class: 'me' }, this.boards[HUMAN].el);
     this.el = h('div', { class: 'screen game' },
-      h('header', { class: 'g-top' }, exit, this.roundLabel, h('span', { class: 'spacer' })),
+      h('header', { class: 'g-top' }, exit, this.roundLabel, h('span', { class: 'spacer' }), mute),
       this.rivalsEl,
       h('section', { class: 'table-wrap' }, this.table.el),
       me,
@@ -125,6 +135,7 @@ export class GameView {
   }
 
   destroy(): void {
+    this.offSettings();
     this.ro?.disconnect();
     this.layer.finishAll();
     this.el.remove();
@@ -273,10 +284,28 @@ export class GameView {
       }
       this.popupAt(wallSlot(pl.player, pl.row, pl.col), `+${pl.points}`, 'plus');
       this.animateScore(pl.player, pl.scoreAfter);
+      this.checkMilestones(s, pl);
     });
     if (!placements.some((p) => p.player === HUMAN)) this.ev.sound('score', { step: 0, bot: true });
     await Promise.all(jobs);
     await wait(160 * ts);
+  }
+
+  /** Celebración al completar una fila, una columna o un color. */
+  private checkMilestones(s: GameState, pl: Placement): void {
+    const wall = s.players[pl.player].wall;
+    const done: string[] = [];
+    if (rowCount(wall, pl.row) === 5) done.push('¡Fila completa!');
+    if (colCount(wall, pl.col) === 5) done.push('¡Columna completa!');
+    if (colorCount(wall, pl.color) === 5) done.push(`¡Todos los ${COLOR_NAMES_PLURAL[pl.color]}!`);
+    if (!done.length) return;
+    const mine = pl.player === HUMAN;
+    this.celebrate(this.boards[pl.player].el, mine ? 30 : 12);
+    if (mine) {
+      this.ev.sound('combo');
+      this.ev.haptic([15, 30, 15]);
+      this.banner(done.join(' '));
+    }
   }
 
   async showPenalties(s: GameState, pens: FloorPenalty[]): Promise<void> {

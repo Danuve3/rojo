@@ -1,6 +1,8 @@
 import './styles.css';
 import { botProvider, createAiWorker, WorkerClient } from './ai/client';
-import { loadSettings } from './storage/settings';
+import { audio } from './audio/engine';
+import { haptic, playSound } from './audio/sounds';
+import { getSettings, loadSettings } from './storage/settings';
 import { App } from './ui/app';
 import { services } from './ui/services';
 import { installTileSprite } from './ui/tileArt';
@@ -17,6 +19,11 @@ async function boot(): Promise<void> {
   installTileSprite();
   const botWorker = new WorkerClient(createAiWorker);
   services.bots = () => botProvider(botWorker);
+  services.sound = (name, opts) => playSound(name, opts);
+  services.haptic = (p) => haptic(p, getSettings().haptics);
+  const unlock = () => audio.unlock();
+  window.addEventListener('pointerdown', unlock, { passive: true });
+  window.addEventListener('keydown', unlock);
   const app = new App(document.getElementById('app') as HTMLElement);
   app.register('home', homeScreen);
   app.register('setup', setupScreen);

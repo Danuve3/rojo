@@ -40,11 +40,18 @@ export function buildTable(numFactories: number): TableView {
     const hgt = el.clientHeight;
     if (w === 0 || hgt === 0) return;
     const n = numFactories;
-    const k = n <= 5 ? 0.34 : n <= 7 ? 0.28 : 0.235;
-    const d = Math.min(Math.min(w, hgt * 1.25) * k, 130);
+    // Diámetro máximo que permite repartir los expositores por la elipse sin solaparse.
+    let d = Math.min(Math.min(w, hgt) * 0.36, 124);
+    let rx = 0;
+    let ry = 0;
+    for (let i = 0; i < 40; i++) {
+      rx = (w - d) / 2 - 2;
+      ry = (hgt - d) / 2 - 2;
+      const perimeter = 2 * Math.PI * Math.sqrt((rx * rx + ry * ry) / 2);
+      if (n * d * 1.12 <= perimeter && Math.min(rx, ry) >= d * 0.95) break;
+      d *= 0.95;
+    }
     tileSize = d * 0.38;
-    const rx = (w - d) / 2 - 2;
-    const ry = (hgt - d) / 2 - 2;
     factories.forEach((f, i) => {
       const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
       const x = w / 2 + rx * Math.cos(a) - d / 2;

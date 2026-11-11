@@ -56,6 +56,7 @@ h1, h2, h3 { font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif
   cursor: pointer; border-radius: 10px;
 }
 .icon-btn:active { background: var(--slot); }
+.icon-btn.sm { font-size: 1.2rem; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 .toggle { display: flex; align-items: center; gap: 12px; min-height: 48px; cursor: pointer; position: relative; }

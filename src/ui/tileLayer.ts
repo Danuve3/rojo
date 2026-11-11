@@ -176,8 +176,16 @@ export class TileLayer {
     const p = this.plan(next);
     const nextBySlot = new Map<string, Tile>();
     const moved = new Set(p.moves.map((m) => m.tile));
-    for (const [slot, t] of this.bySlot) if (!moved.has(t) && !p.removes.includes(t)) nextBySlot.set(slot, t);
     const jobs: Promise<void>[] = [];
+    for (const [slot, t] of this.bySlot) {
+      if (moved.has(t) || p.removes.includes(t)) continue;
+      nextBySlot.set(slot, t);
+      // Losetas que no cambian de slot pero sí de posición (el centro se reorganiza).
+      const r = this.hooks.resolve(slot, next);
+      if (r && (Math.abs(r.x - t.rect.x) > 0.5 || Math.abs(r.y - t.rect.y) > 0.5 || Math.abs(r.size - t.rect.size) > 0.5)) {
+        jobs.push(this.fly(t, r, { duration: 240, delay: 60, arc: 0, bounce: false }, slot));
+      }
+    }
     const counters = new Map<string, number>();
     const indexFor = (key: string) => {
       const n = counters.get(key) ?? 0;
