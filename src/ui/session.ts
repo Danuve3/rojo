@@ -14,7 +14,7 @@ export interface SavedGame {
   config: GameConfig;
   state: GameState;
   /** Estados antes de cada jugada humana (para deshacer). */
-  undo: Array<{ state: GameState; records: number; rounds: number }>;
+  undo: Array<{ state: GameState; records: number; rounds: number; moves: number }>;
   records: MoveRecord[];
   rounds: RoundRecord[];
   moves: Array<{ player: number; move: Move }>;

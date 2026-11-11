@@ -1,6 +1,7 @@
 import './styles.css';
 import { botProvider, createAiWorker, WorkerClient } from './ai/client';
 import { audio } from './audio/engine';
+import { CoachClient } from './coach/client';
 import { haptic, playSound } from './audio/sounds';
 import { getSettings, loadSettings } from './storage/settings';
 import { App } from './ui/app';
@@ -19,6 +20,8 @@ async function boot(): Promise<void> {
   installTileSprite();
   const botWorker = new WorkerClient(createAiWorker);
   services.bots = () => botProvider(botWorker);
+  let coachClient: CoachClient | null = null;
+  services.coach = () => (coachClient ??= new CoachClient(new WorkerClient(createAiWorker)));
   services.sound = (name, opts) => playSound(name, opts);
   services.haptic = (p) => haptic(p, getSettings().haptics);
   const unlock = () => audio.unlock();

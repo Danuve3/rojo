@@ -4,6 +4,7 @@ import {
 import type { Analysis, Verdict } from '../coach/types';
 import { kvDelete, kvSet } from '../storage/db';
 import { getSettings } from '../storage/settings';
+import { isMistake } from '../coach/verdict';
 import { HUMAN } from './config';
 import { wait } from './dom';
 import { GameView, type ViewEvents } from './gameView';
@@ -34,13 +35,14 @@ export class GameController {
   readonly view: GameView;
   private gen = 0;
   private destroyed = false;
+  private idle = false;
 
   constructor(private game: SavedGame, private deps: ControllerDeps) {
     this.view = new GameView(game.config, {
       onMove: (m) => void this.humanMove(m).catch((e) => console.error('Error al jugar', e)),
       onSkip: () => this.view.setSkipping(true),
-      onHint: () => undefined,
-      onUndo: () => undefined,
+      onHint: () => void this.hint(),
+      onUndo: () => this.undo(),
       onExit: () => deps.onExit(),
       sound: deps.sound,
       haptic: deps.haptic,
@@ -53,6 +55,7 @@ export class GameController {
 
   mount(parent: HTMLElement): void {
     this.view.mount(parent);
+    this.refreshCoachButtons();
     this.view.sync(this.state);
     void this.advance();
   }
@@ -90,6 +93,9 @@ export class GameController {
     if (s.current === HUMAN) {
       this.view.setStatus('Tu turno: toca un color');
       this.view.enableInput(s);
+      this.idle = true;
+      this.refreshCoachButtons();
+      if (this.deps.coach) void this.deps.coach.analyze(cloneState(s));
       return;
     }
     const g = this.gen;
@@ -107,7 +113,19 @@ export class GameController {
   }
 
   private async humanMove(m: Move): Promise<void> {
-    this.game.undo.push({ state: cloneState(this.state), records: this.game.records.length, rounds: this.game.rounds.length });
+    this.idle = false;
+    this.refreshCoachButtons();
+    const before = cloneState(this.state);
+    if (this.deps.coach) {
+      this.deps.coach.cancel();
+      void this.rateMove(before, m, this.gen);
+    }
+    this.game.undo.push({
+      state: before,
+      records: this.game.records.length,
+      rounds: this.game.rounds.length,
+      moves: this.game.moves.length,
+    });
     if (this.game.undo.length > 60) this.game.undo.shift();
     await this.play(m);
   }
@@ -141,6 +159,79 @@ export class GameController {
     } else {
       await this.view.showRoundStart(s);
     }
+  }
+
+  private names(): string[] {
+    return this.game.config.players.map((p) => p.name);
+  }
+
+  private refreshCoachButtons(): void {
+    const c = this.game.config.coach;
+    const on = !!this.deps.coach;
+    this.view.hintBtn.hidden = !(on && c.hints);
+    this.view.undoBtn.hidden = !on;
+    this.view.hintBtn.disabled = !this.idle;
+    this.view.undoBtn.disabled = !this.idle || this.game.undo.length === 0;
+  }
+
+  /** Pista bajo demanda: las 3 mejores jugadas con su valor y explicación. */
+  private async hint(): Promise<void> {
+    const coach = this.deps.coach;
+    if (!coach || !this.idle) return;
+    const g = this.gen;
+    const s = this.state;
+    this.view.setStatus('Analizando…', true);
+    this.view.hintBtn.disabled = true;
+    const a = await coach.analyze(cloneState(s));
+    if (g !== this.gen || !this.idle) return;
+    this.view.hintBtn.disabled = false;
+    this.view.setStatus('Tu turno: toca un color');
+    if (!a || !a.moves.length) return;
+    const top = a.moves.slice(0, 3);
+    this.deps.sound('select');
+    this.view.showHints(top, this.names(), s);
+  }
+
+  private async rateMove(before: GameState, m: Move, g: number): Promise<void> {
+    const coach = this.deps.coach;
+    if (!coach) return;
+    const v = await coach.rate(before, m, this.names());
+    if (!v || g !== this.gen || this.destroyed) return;
+    this.game.records.push({
+      round: before.round,
+      turn: before.turn,
+      before,
+      move: m,
+      best: v.best.move,
+      loss: v.loss,
+      label: v.label,
+      reasons: v.reasons,
+      tags: v.tags,
+    });
+    this.save();
+    const c = this.game.config.coach;
+    if (!c.verdicts) return;
+    if (c.verdictMode === 'mistakes' && !isMistake(v.label)) return;
+    this.deps.sound(isMistake(v.label) ? 'coachWarn' : 'coachGood');
+    this.view.showVerdict(v, before);
+  }
+
+  /** Deshace la última jugada propia (y las de los bots que vinieron después). */
+  private undo(): void {
+    if (!this.idle || !this.deps.coach) return;
+    const snap = this.game.undo.pop();
+    if (!snap) return;
+    this.gen++;
+    this.game.state = snap.state;
+    this.game.records.length = Math.min(this.game.records.length, snap.records);
+    this.game.rounds.length = Math.min(this.game.rounds.length, snap.rounds);
+    this.game.moves.length = Math.min(this.game.moves.length, snap.moves);
+    this.view.disableInput();
+    this.view.hideCoach();
+    this.view.sync(this.state);
+    this.deps.sound('cancel');
+    this.save();
+    void this.advance();
   }
 
   private finish(): void {

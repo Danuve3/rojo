@@ -2,6 +2,9 @@ import {
   type Bonus, FIRST_TOKEN, type FloorPenalty, floorPenalty, FLOOR_SIZE, type GameState, type Move, type Placement,
   type Source, type Target, type TurnResult, validTargets, sum, rowCount, colCount, colorCount,
 } from '../engine';
+import { describeMove, explainGood } from '../coach/explain';
+import type { MoveAnalysis, Verdict } from '../coach/types';
+import { isMistake, LABEL_ICON, LABEL_TEXT } from '../coach/verdict';
 import { getSettings, onSettings, updateSettings } from '../storage/settings';
 import { buildBoard, type BoardView } from './board';
 import { boardSvg } from './boardSvg';
@@ -28,9 +31,9 @@ export interface ViewEvents {
   haptic(pattern: number | number[]): void;
 }
 
-export interface HintMark {
-  move: Move;
-  rank: number;
+function signed(n: number): string {
+  const r = Math.round(n * 10) / 10;
+  return `${r > 0 ? '+' : r < 0 ? '−' : '±'}${Math.abs(r).toFixed(1).replace('.', ',')}`;
 }
 
 interface Selection {
@@ -122,6 +125,9 @@ export class GameView {
       this.verdictEl,
       this.layer.root,
       this.fx);
+    this.hintBtn.addEventListener('click', () => ev.onHint());
+    this.undoBtn.addEventListener('click', () => ev.onUndo());
+    this.verdictEl.addEventListener('click', () => this.hideVerdict());
     this.bindInput();
   }
 
@@ -532,6 +538,7 @@ export class GameView {
     const s = this.state;
     if (!s) return;
     this.clearSelection();
+    this.hideVerdict();
     this.selection = sel;
     this.ev.sound('pick');
     this.ev.haptic(8);
@@ -633,23 +640,45 @@ export class GameView {
       return;
     }
     const move: Move = { source: sel.source, color: sel.color as Move['color'], target };
+    this.setStatus('');
     this.disableInput();
     this.ev.onMove(move);
   }
 
   // ---------- pistas ----------
 
-  showHintMarks(marks: HintMark[]): void {
+  /** Pistas: resalta las 3 mejores jugadas en el tablero y las explica. */
+  showHints(moves: MoveAnalysis[], names: string[], st: GameState): void {
+    this.hideVerdict();
+    this.clearSelection();
     this.clearHints();
-    for (const mk of marks) {
-      for (const sl of this.sourceTiles(mk.move.source, mk.move.color)) {
-        this.layer.tileAt(sl)?.inner.classList.add('hinted', `h${mk.rank}`);
+    const b = this.boards[HUMAN];
+    moves.forEach((m, i) => {
+      const rank = i + 1;
+      for (const sl of this.sourceTiles(m.move.source, m.move.color)) this.layer.tileAt(sl)?.inner.classList.add('hinted', `h${rank}`);
+      const target = m.move.target === 'floor' ? b.floor : b.lines[m.move.target];
+      if (!target.dataset.hint) {
+        target.classList.add('hinted', `h${rank}`);
+        target.dataset.hint = String(rank);
       }
-      const b = this.boards[HUMAN];
-      const target = mk.move.target === 'floor' ? b.floor : b.lines[mk.move.target];
-      target.classList.add('hinted', `h${mk.rank}`);
-      target.dataset.hint = String(mk.rank);
-    }
+    });
+    const src = (m: MoveAnalysis) => (m.move.source === 'center' ? st.center : st.factories[m.move.source])[m.move.color];
+    const best = moves[0]?.value ?? 0;
+    const list = h('ol', {}, ...moves.map((m, i) => {
+      const li = h('li', { role: 'button', tabindex: 0 },
+        h('b', {}, describeMove(m.move, src(m))),
+        h('span', { class: 'hint-val' }, i === 0 ? ` · ventaja estimada ${signed(m.value)}` : ` · ${signed(m.value - best)} frente a la mejor`),
+        h('div', { class: 'muted small' }, explainGood(m, names)));
+      li.addEventListener('click', () => {
+        this.hintPanel.hidden = true;
+        this.select({ source: m.move.source, color: m.move.color });
+      });
+      return li;
+    }));
+    const close = h('button', { class: 'icon-btn sm close', 'aria-label': 'Cerrar pistas' }, '×');
+    close.addEventListener('click', () => this.clearHints());
+    this.hintPanel.replaceChildren(h('div', { class: 'hp-head' }, h('strong', {}, '💡 Mejores jugadas'), close), list);
+    this.hintPanel.hidden = false;
   }
 
   clearHints(): void {
@@ -660,6 +689,35 @@ export class GameView {
       delete el.dataset.hint;
     });
     this.hintPanel.hidden = true;
+  }
+
+  private verdictTimer = 0;
+
+  /** Toast no intrusivo con la valoración de la jugada. */
+  showVerdict(v: Verdict, before: GameState): void {
+    this.hintPanel.hidden = true;
+    const src = (m: Move) => (m.source === 'center' ? before.center : before.factories[m.source])[m.color];
+    const mistake = isMistake(v.label);
+    const lossText = v.loss < 0.05 ? 'la mejor jugada' : `pierdes ~${v.loss.toFixed(1).replace('.', ',')}`;
+    this.verdictEl.className = `verdict ${v.label}`;
+    this.verdictEl.replaceChildren(...[
+      h('div', { class: 'v-title' }, h('span', { class: 'v-icon' }, LABEL_ICON[v.label]), LABEL_TEXT[v.label], h('span', { class: 'v-loss' }, lossText)),
+      v.reasons.length ? h('ul', {}, ...v.reasons.map((r) => h('li', {}, r))) : null,
+      v.label !== 'excelente' ? h('div', { class: 'v-best small' }, 'Mejor: ', describeMove(v.best.move, src(v.best.move))) : null,
+    ].filter((x): x is HTMLDivElement | HTMLUListElement => x !== null));
+    void this.verdictEl.offsetWidth;
+    this.verdictEl.classList.add('show');
+    window.clearTimeout(this.verdictTimer);
+    this.verdictTimer = window.setTimeout(() => this.hideVerdict(), mistake ? 9000 : 3500);
+  }
+
+  hideVerdict(): void {
+    this.verdictEl.classList.remove('show');
+  }
+
+  hideCoach(): void {
+    this.hideVerdict();
+    this.clearHints();
   }
 
   // ---------- rivales ----------

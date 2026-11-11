@@ -255,7 +255,7 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .verdict.pifia { border-left-color: var(--red); }
 
 .hint-panel {
-  position: absolute; left: 8px; right: 8px; bottom: 64px; z-index: 24; background: var(--card); border-radius: 14px;
+  position: absolute; left: 8px; right: 8px; top: 44px; z-index: 24; max-height: 46%; overflow: auto; background: var(--card); border-radius: 14px;
   box-shadow: 0 6px 24px rgba(40, 25, 5, 0.25); padding: 10px 14px; max-width: 540px; margin: 0 auto;
 }
 .hint-panel ol { margin: 0; padding-left: 1.4em; }
@@ -287,3 +287,14 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 @media (min-width: 700px) {
   .screen.game { border-left: 1px solid rgba(216, 195, 157, 0.5); border-right: 1px solid rgba(216, 195, 157, 0.5); }
 }
+
+.hp-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.hint-panel li { cursor: pointer; border-radius: 8px; }
+.hint-panel li:active { background: var(--slot); }
+.hint-val { color: var(--muted); font-size: 0.8rem; }
+.tile-inner.hinted.h1 { box-shadow: 0 0 0 4px #e3a93a; }
+.tile-inner.hinted.h2 { box-shadow: 0 0 0 3px rgba(227, 169, 58, 0.7); }
+.tile-inner.hinted.h3 { box-shadow: 0 0 0 2px rgba(227, 169, 58, 0.5); }
+.verdict .v-icon { font-family: Georgia, serif; }
+.verdict .v-best { margin-top: 4px; color: var(--muted); }
+.icon-btn.close { width: 36px; height: 36px; }

@@ -1,9 +1,6 @@
 import { s } from './dom';
 
-export const COLOR_NAMES = ['cobalto', 'ocre', 'rojo', 'tinta', 'marfil'] as const;
-export const COLOR_NAMES_PLURAL = ['cobaltos', 'ocres', 'rojos', 'tintas', 'marfiles'] as const;
-export const COLOR_LABELS = ['Cobalto', 'Ocre', 'Rojo', 'Tinta', 'Marfil'] as const;
-export const SYMBOL_NAMES = ['flor', 'rombo', 'estrella', 'anillo', 'celosía'] as const;
+export { COLOR_LABELS, COLOR_NAMES, COLOR_NAMES_PLURAL, SYMBOL_NAMES } from './colors';
 
 interface TileStyle {
   base: string;

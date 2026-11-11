@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { evaluate } from '../src/ai/evaluate';
 import { FACTOR_NAMES } from '../src/ai/factors';
 import { noisyArgmax } from '../src/ai/select';
+import { WEIGHTS } from '../src/ai/weights';
 import { bit, createRng, type GameState, legalMoves, wallCol } from '../src/engine';
 import { emptyGame } from './helpers';
 
@@ -29,7 +30,7 @@ describe('evaluación por factores', () => {
   it('completar una línea da puntos inmediatos', () => {
     const s = table(emptyGame(), [1, 3, 0, 0, 0]);
     const e = evaluate(s, { source: 0, color: 0, target: 0 });
-    expect(e.factores.puntosInmediatos).toBeCloseTo(1, 6);
+    expect(e.factores.puntosInmediatos).toBeCloseTo(1 * WEIGHTS.puntosInmediatos, 6);
   });
   it('la ficha inicial cuesta el hueco del suelo', () => {
     const s = emptyGame();
