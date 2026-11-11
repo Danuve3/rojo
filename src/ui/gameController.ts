@@ -4,7 +4,9 @@ import {
 import type { Analysis, Verdict } from '../coach/types';
 import { kvDelete, kvSet } from '../storage/db';
 import { getSettings } from '../storage/settings';
+import { summarize } from '../coach/summary';
 import { isMistake } from '../coach/verdict';
+import { saveHistory } from '../storage/history';
 import { HUMAN } from './config';
 import { wait } from './dom';
 import { GameView, type ViewEvents } from './gameView';
@@ -36,6 +38,7 @@ export class GameController {
   private gen = 0;
   private destroyed = false;
   private idle = false;
+  private pendingRates = new Set<Promise<void>>();
 
   constructor(private game: SavedGame, private deps: ControllerDeps) {
     this.view = new GameView(game.config, {
@@ -87,7 +90,7 @@ export class GameController {
     const s = this.state;
     this.view.setSkipping(false);
     if (s.phase === 'over') {
-      this.finish();
+      await this.finish();
       return;
     }
     if (s.current === HUMAN) {
@@ -118,7 +121,9 @@ export class GameController {
     const before = cloneState(this.state);
     if (this.deps.coach) {
       this.deps.coach.cancel();
-      void this.rateMove(before, m, this.gen);
+      const job = this.rateMove(before, m, this.gen);
+      this.pendingRates.add(job);
+      void job.finally(() => this.pendingRates.delete(job));
     }
     this.game.undo.push({
       state: before,
@@ -234,13 +239,21 @@ export class GameController {
     void this.advance();
   }
 
-  private finish(): void {
+  private async finish(): Promise<void> {
     const w = winners(this.state);
     const won = w.includes(HUMAN);
     this.view.setStatus(won ? '¡Has ganado!' : `Gana ${w.map((i) => this.playerName(i)).join(' y ')}`);
     this.deps.sound(won ? 'win' : 'lose');
     if (won) this.view.celebrate(this.view.boardEl(HUMAN), 40);
-    void kvDelete('current');
+    // Espera (con límite) a las valoraciones pendientes.
+    if (this.pendingRates.size) {
+      await wait(900);
+      this.view.setStatus('El entrenador revisa la partida…', true);
+      await Promise.race([Promise.all([...this.pendingRates]), wait(12000)]);
+    }
+    if (this.destroyed) return;
+    await saveHistory(summarize(this.game));
+    await kvDelete('current');
     this.deps.onFinished(this.game);
   }
 }

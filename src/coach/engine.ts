@@ -97,7 +97,10 @@ export class CoachEngine {
   async rate(state: GameState, played: Move, names: string[], budgetMs: number): Promise<Verdict | null> {
     if (!isLegal(state, played)) return null;
     const e = this.entry(state);
-    if (e.spentMs < budgetMs * 0.5) await this.think(e, budgetMs * 0.5 - e.spentMs, () => false);
+    // Si se jugó antes de terminar el análisis, basta con un mínimo: las dos jugadas
+    // comparadas reciben luego visitas forzadas.
+    const min = budgetMs * 0.3;
+    if (e.spentMs < min) await this.think(e, min - e.spentMs, () => false);
     const move = canonicalMove(state, played);
     let best = this.build(e).moves[0];
     e.tree.ensureVisits(best.move, MIN_RATE_VISITS);
