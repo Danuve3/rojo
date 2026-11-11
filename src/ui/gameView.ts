@@ -500,11 +500,44 @@ export class GameView {
         this.onTargetTap(raw === 'floor' ? 'floor' : (Number(raw) as Target));
         return;
       }
+      // Tocar una fila del muro equivale a tocar su línea (área táctil más ancha).
+      const cell = t.closest<HTMLElement>('.board:not(.compact) .cell');
+      if (cell && this.selection) {
+        const row = Number((cell.dataset.slot ?? '').split(':')[3]);
+        this.onTargetTap(row as Target);
+        return;
+      }
+      // Toque cerca de una loseta de la mesa: área táctil ampliada.
+      const near = this.inputOn ? this.nearestTableTile(e.clientX, e.clientY) : null;
+      if (near) {
+        this.onTileTap(near.slot, near.color);
+        return;
+      }
       if (this.selection) {
         this.clearSelection();
         this.ev.sound('cancel');
       }
     });
+  }
+
+  private nearestTableTile(cx: number, cy: number): { slot: string; color: number } | null {
+    const o = this.originRect();
+    const x = cx - o.left;
+    const y = cy - o.top;
+    let best: { slot: string; color: number } | null = null;
+    let bestD = 26 * 26;
+    for (const t of this.layer.tiles()) {
+      if (!t.slot || t.color === FIRST_TOKEN) continue;
+      if (!t.slot.startsWith('f:') && !t.slot.startsWith('c:')) continue;
+      const dx = t.rect.x + t.rect.size / 2 - x;
+      const dy = t.rect.y + t.rect.size / 2 - y;
+      const d = Math.max(0, Math.hypot(dx, dy) - t.rect.size / 2) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = { slot: t.slot, color: t.color };
+      }
+    }
+    return best;
   }
 
   private sourceOf(slot: string): Source | null {

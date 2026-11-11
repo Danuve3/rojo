@@ -13,7 +13,8 @@
     "tournament": "tsx scripts/tournament.ts",
     "calibrate": "tsx scripts/calibrate.ts",
     "bench": "tsx scripts/bench.ts",
-    "icons": "tsx scripts/icons.ts"
+    "calibrate:coach": "tsx scripts/coachCalibration.ts",
+    "icons": "node scripts/icons.cjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

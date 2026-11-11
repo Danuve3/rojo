@@ -189,6 +189,7 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .board.choosing .b-line.valid { background: rgba(47, 143, 91, 0.13); box-shadow: 0 0 0 2px rgba(47, 143, 91, 0.45); cursor: pointer; }
 .board.choosing .b-line.valid.spill { background: rgba(201, 138, 18, 0.13); box-shadow: 0 0 0 2px rgba(201, 138, 18, 0.5); }
 .board.choosing .b-line.invalid { opacity: 0.45; }
+.board.choosing .cell { cursor: pointer; }
 .board.choosing .b-floor.valid { box-shadow: 0 0 0 2px rgba(200, 64, 46, 0.35); cursor: pointer; }
 .b-line.pending, .b-floor.pending { box-shadow: 0 0 0 3px var(--accent) !important; }
 .slot.will { background: rgba(47, 143, 91, 0.45); }

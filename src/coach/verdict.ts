@@ -1,5 +1,14 @@
 import type { FactorName } from '../ai/factors';
+import { WEIGHTS } from '../ai/weights';
 import type { ErrorTag, VerdictLabel } from './types';
+
+/**
+ * Escala del margen del MCTS a puntos reales. Calibrada con el torneo: el margen medio
+ * real de nivel 10 frente a los niveles 7, 5 y 3 (≈0,6 / 0,8 / 1,4 puntos por jugada)
+ * es unas 3–4 veces menor que la pérdida media bruta que estima el MCTS para esos niveles,
+ * porque los rollouts amplifican las consecuencias de cada jugada.
+ */
+export const VALUE_SCALE = 0.3;
 
 /** Umbrales de pérdida de valor esperado (puntos). Calibrados con el torneo. */
 export const THRESHOLDS: Array<{ label: VerdictLabel; max: number }> = [
@@ -82,5 +91,15 @@ export const TAG_INFO: Record<ErrorTag, { name: string; tip: string }> = {
 
 /** Precisión de una jugada (0–100) a partir de su pérdida. */
 export function moveAccuracy(loss: number): number {
-  return 100 * Math.exp(-Math.max(0, loss) / 3.5);
+  return 100 * Math.exp(-Math.max(0, loss) / 1.5);
+}
+
+/** Puntos seguros de una jugada: la penalización del suelo (sin peso de calibración). */
+export function certainPoints(f: Record<FactorName, number>): number {
+  return f.penalizacionSuelo / WEIGHTS.penalizacionSuelo;
+}
+
+/** Pérdida: margen escalado, pero nunca menos que los puntos seguros que se pierden. */
+export function lossOf(rawValueLoss: number, best: Record<FactorName, number>, mine: Record<FactorName, number>): number {
+  return Math.max(0, rawValueLoss, certainPoints(best) - certainPoints(mine));
 }

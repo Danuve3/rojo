@@ -3,7 +3,7 @@ import { Mcts } from '../ai/mcts';
 import { cloneState, createRng, type GameState, isLegal, legalMoves, type Move, moveKey, randomSeed, stateKey } from '../engine';
 import { explainLoss } from './explain';
 import type { Analysis, MoveAnalysis, Verdict } from './types';
-import { isMistake, labelFor, TAG_OF_FACTOR } from './verdict';
+import { isMistake, labelFor, lossOf, TAG_OF_FACTOR, VALUE_SCALE } from './verdict';
 import { canonicalMove } from './canonical';
 import { topLossFactors } from './explain';
 
@@ -83,7 +83,7 @@ export class CoachEngine {
     const solid = results.filter((r) => r.visits >= Math.max(8, maxV * 0.04));
     const moves = (solid.length ? solid : results)
       .sort((a, b) => b.value - a.value)
-      .map((r) => this.moveAnalysis(e, r.move, r.value, r.visits));
+      .map((r) => this.moveAnalysis(e, r.move, r.value * VALUE_SCALE, r.visits));
     return { key: e.key, player: e.state.current, moves, iterations: e.tree.iterations, ms: Math.round(e.spentMs) };
   }
 
@@ -97,20 +97,25 @@ export class CoachEngine {
   async rate(state: GameState, played: Move, names: string[], budgetMs: number): Promise<Verdict | null> {
     if (!isLegal(state, played)) return null;
     const e = this.entry(state);
-    // Si se jugó antes de terminar el análisis, basta con un mínimo: las dos jugadas
-    // comparadas reciben luego visitas forzadas.
-    const min = budgetMs * 0.3;
-    if (e.spentMs < min) await this.think(e, min - e.spentMs, () => false);
+    // La valoración usa siempre el presupuesto completo (si se jugó rápido, el veredicto
+    // llega un poco más tarde, sin bloquear nada).
+    if (e.spentMs < budgetMs) await this.think(e, budgetMs - e.spentMs, () => false);
     const move = canonicalMove(state, played);
-    let best = this.build(e).moves[0];
-    e.tree.ensureVisits(best.move, MIN_RATE_VISITS);
     e.tree.ensureVisits(move, MIN_RATE_VISITS);
-    const all = this.build(e).moves;
-    best = all[0];
+    // Mejor jugada robusta: las candidatas reciben visitas forzadas antes de compararlas,
+    // para no premiar a una jugada con pocas simulaciones y valor inflado por suerte.
+    let all = this.build(e).moves;
+    for (let round = 0; round < 4; round++) {
+      const weak = all.slice(0, 3).filter((m) => m.visits < MIN_RATE_VISITS);
+      if (!weak.length) break;
+      for (const m of weak) e.tree.ensureVisits(m.move, MIN_RATE_VISITS);
+      all = this.build(e).moves;
+    }
+    const best = all[0];
     const key = moveKey(move);
     const stat = e.tree.results().find((r) => moveKey(r.move) === key);
-    const mine = all.find((m) => moveKey(m.move) === key) ?? this.moveAnalysis(e, move, stat?.value ?? best.value, stat?.visits ?? 0);
-    const loss = moveKey(best.move) === key ? 0 : Math.max(0, best.value - mine.value);
+    const mine = all.find((m) => moveKey(m.move) === key) ?? this.moveAnalysis(e, move, stat ? stat.value * VALUE_SCALE : best.value, stat?.visits ?? 0);
+    const loss = moveKey(best.move) === key ? 0 : lossOf(best.value - mine.value, best.factors, mine.factors);
     const label = labelFor(loss);
     const reasons = label === 'excelente' ? [] : explainLoss(mine, best, names);
     const tags = isMistake(label) ? [...new Set(topLossFactors(mine, best).slice(0, 2).map(({ f }) => TAG_OF_FACTOR[f]))] : [];

@@ -5,6 +5,7 @@ import { CoachClient } from './coach/client';
 import { haptic, playSound } from './audio/sounds';
 import { getSettings, loadSettings } from './storage/settings';
 import { App } from './ui/app';
+import { setupPwa } from './ui/pwa';
 import { services } from './ui/services';
 import { installTileSprite } from './ui/tileArt';
 import { endScreen } from './ui/screens/end';
@@ -36,6 +37,7 @@ async function boot(): Promise<void> {
   app.register('howto', howtoScreen);
   app.register('settings', settingsScreen);
   app.go('home');
+  setupPwa();
 }
 
 void boot();
