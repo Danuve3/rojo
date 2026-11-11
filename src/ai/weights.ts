@@ -5,9 +5,9 @@ import type { FactorName } from './factors';
  * Calibrados con `npm run tournament` / `npm run calibrate`.
  */
 export const WEIGHTS: Record<FactorName, number> = {
-  puntosInmediatos: 1,
+  puntosInmediatos: 1.6,
   penalizacionSuelo: 1,
-  potencialLinea: 0.9,
+  potencialLinea: 0.45,
   lineaBloqueada: 1,
   progresoFila: 0.8,
   progresoColumna: 1,
