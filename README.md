@@ -76,7 +76,7 @@ Tras la calibración `puntosInmediatos` pasó a pesar 1,6 y `potencialLinea` 0,4
 
 ## Despliegue
 
-El workflow `.github/workflows/deploy.yml` ejecuta tests, compila y publica `dist/` en GitHub Pages en cada push a `main`. Hay que activarlo una vez en **Settings → Pages → Build and deployment → Source: GitHub Actions**. La app se sirve en `https://<usuario>.github.io/rojo/` (el `base` de Vite es `/rojo/`).
+El workflow `.github/workflows/deploy.yml` ejecuta los tests, compila y publica `dist/` en la rama **`gh-pages`** en cada push a `main` (o a mano desde Actions → *Run workflow*). En **Settings → Pages → Build and deployment** hay que elegir una vez **Deploy from a branch**, rama `gh-pages`, carpeta `/ (root)`. La app se sirve en `https://<usuario>.github.io/rojo/` (el `base` de Vite es `/rojo/`). La rama incluye un `.nojekyll` para que GitHub publique los archivos tal cual.
 
 Para regenerar los iconos PNG a partir de `public/favicon.svg`: `npm run icons` (usa Playwright).
 
