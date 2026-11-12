@@ -6,6 +6,7 @@ import { haptic, playSound } from './audio/sounds';
 import { getSettings, loadSettings } from './storage/settings';
 import { App } from './ui/app';
 import { setupPwa } from './ui/pwa';
+import { setupTheme } from './ui/theme';
 import { services } from './ui/services';
 import { installTileSprite } from './ui/tileArt';
 import { endScreen } from './ui/screens/end';
@@ -18,6 +19,7 @@ import { setupScreen } from './ui/screens/setup';
 
 async function boot(): Promise<void> {
   await loadSettings();
+  setupTheme();
   installTileSprite();
   const botWorker = new WorkerClient(createAiWorker);
   services.bots = () => botProvider(botWorker);

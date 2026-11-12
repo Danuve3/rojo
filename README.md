@@ -124,4 +124,5 @@ Analiza siempre con MCTS y presupuesto generoso (1,5 s, ~30 000 simulaciones) en
 - Cada color tiene un símbolo propio (flor, rombo, estrella, anillo, celosía).
 - Tocar cerca de una loseta de la mesa la selecciona (radio de 26 px) y tocar una fila del muro equivale a tocar su línea, para ampliar las áreas táctiles en móviles pequeños.
 - Respeta `prefers-reduced-motion`; velocidad de animación normal / rápida / instantánea.
+- Modo oscuro: sigue al sistema por defecto y se puede fijar en Ajustes (Sistema / Claro / Oscuro).
 - Medido con CPU ×4 (gama media) durante una partida de 4 jugadores: sin long tasks y p95 de 16,8 ms por frame.

@@ -1,5 +1,5 @@
 import { clearAll } from '../../storage/db';
-import { getSettings, updateSettings, type AnimSpeed, type BotSpeed } from '../../storage/settings';
+import { getSettings, updateSettings, type AnimSpeed, type BotSpeed, type Theme } from '../../storage/settings';
 import type { App } from '../app';
 import { h } from '../dom';
 import { screen, segmented, toggle } from './common';
@@ -15,6 +15,10 @@ export function settingsScreen(root: HTMLElement, app: App): void {
     location.reload();
   });
   root.append(screen('Ajustes', app,
+    h('section', { class: 'card' }, h('h2', {}, 'Apariencia'),
+      h('div', { class: 'field' }, h('span', {}, 'Tema'),
+        segmented<Theme>([{ value: 'system', label: 'Sistema' }, { value: 'light', label: 'Claro' }, { value: 'dark', label: 'Oscuro' }],
+          st.theme, (v) => updateSettings({ theme: v }), 'Tema'))),
     h('section', { class: 'card' }, h('h2', {}, 'Sonido'),
       toggle('Silencio', st.muted, (v) => updateSettings({ muted: v })),
       h('label', { class: 'field' }, h('span', {}, 'Volumen'), vol),

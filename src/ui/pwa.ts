@@ -6,7 +6,7 @@ function toast(text: string, action?: { label: string; run: () => void }, ms = 0
   const close = () => el.remove();
   const btn = action ? h('button', { class: 'btn primary' }, action.label) : null;
   btn?.addEventListener('click', action!.run);
-  const dismiss = h('button', { class: 'icon-btn sm', 'aria-label': 'Cerrar', style: 'color:#fff' }, '×');
+  const dismiss = h('button', { class: 'icon-btn sm', 'aria-label': 'Cerrar', style: 'color:inherit' }, '×');
   dismiss.addEventListener('click', close);
   const el = h('div', { class: 'update-toast', role: 'status' }, h('span', {}, text), btn, dismiss);
   document.body.append(el);

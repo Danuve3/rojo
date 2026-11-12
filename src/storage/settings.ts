@@ -2,6 +2,7 @@ import { kvGet, kvSet } from './db';
 
 export type AnimSpeed = 'normal' | 'fast' | 'instant';
 export type BotSpeed = 'slow' | 'normal' | 'fast';
+export type Theme = 'system' | 'light' | 'dark';
 
 export interface Settings {
   volume: number;
@@ -10,6 +11,7 @@ export interface Settings {
   haptics: boolean;
   animSpeed: AnimSpeed;
   botSpeed: BotSpeed;
+  theme: Theme;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -19,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   haptics: true,
   animSpeed: 'normal',
   botSpeed: 'normal',
+  theme: 'system',
 };
 
 let current: Settings = { ...DEFAULT_SETTINGS };
