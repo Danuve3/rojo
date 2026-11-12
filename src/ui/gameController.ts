@@ -59,8 +59,12 @@ export class GameController {
   mount(parent: HTMLElement): void {
     this.view.mount(parent);
     this.refreshCoachButtons();
-    this.view.sync(this.state);
-    void this.advance();
+    if (this.game.moves.length === 0 && this.state.round === 1) {
+      void this.view.showInitialDeal(this.state).then(() => this.advance());
+    } else {
+      this.view.sync(this.state);
+      void this.advance();
+    }
   }
 
   destroy(): void {

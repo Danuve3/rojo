@@ -19,7 +19,7 @@ import { type Motion, type SlotRect, TileLayer } from './tileLayer';
 
 export type SoundName =
   | 'select' | 'pick' | 'drop' | 'floor' | 'botPick' | 'botDrop' | 'score' | 'combo' | 'penalty' | 'win' | 'lose'
-  | 'coachGood' | 'coachWarn' | 'round' | 'deal' | 'cancel';
+  | 'coachGood' | 'coachWarn' | 'round' | 'deal' | 'dealTile' | 'cancel';
 
 export interface ViewEvents {
   onMove(m: Move): void;
@@ -213,8 +213,20 @@ export class GameView {
   }
 
   private landingBot = false;
+  private dealing = false;
+  private lastDealSound = 0;
+
   private onLand(slot: string): void {
     const z = zoneOf(slot);
+    if (this.dealing && z === 'factory') {
+      // Tintineo por loseta repartida (con límite para no saturar).
+      const now = performance.now();
+      if (this.timeScale() > 0 && now - this.lastDealSound > 28) {
+        this.lastDealSound = now;
+        this.ev.sound('dealTile', { step: Number(slot.split(':')[1]) });
+      }
+      return;
+    }
     if (z === 'line') this.ev.sound(this.landingBot ? 'botDrop' : 'drop');
     else if (z === 'floor') this.ev.sound('floor', { bot: this.landingBot });
   }
@@ -342,8 +354,34 @@ export class GameView {
     this.banner(`Ronda ${s.round}`);
     this.ev.sound('round');
     await wait(300 * ts);
+    await this.deal(s);
+  }
+
+  /** Reparto animado: las losetas salen de la bolsa hacia los expositores, con sonido. */
+  private async deal(s: GameState): Promise<void> {
     this.ev.sound('deal');
-    await this.layer.transition(this.viewModel(s));
+    this.dealing = true;
+    try {
+      await this.layer.transition(this.viewModel(s));
+    } finally {
+      this.dealing = false;
+    }
+  }
+
+  /** Primera ronda: coloca todo menos los expositores y luego los reparte. */
+  async showInitialDeal(s: GameState): Promise<void> {
+    this.state = s;
+    this.tokenAtCenter = false;
+    const m = this.viewModel(s);
+    for (const k of [...m.keys()]) if (k.startsWith('f:')) m.delete(k);
+    this.layer.sync(m);
+    this.scoreShown = s.players.map((p) => p.score);
+    this.boards.forEach((b, i) => b.setScore(s.players[i].score));
+    this.updateChrome(s);
+    this.banner(`Ronda ${s.round}`);
+    this.ev.sound('round');
+    await wait(350 * this.timeScale());
+    await this.deal(s);
   }
 
   async showBonuses(s: GameState, bonuses: Bonus[]): Promise<void> {

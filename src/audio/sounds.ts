@@ -115,6 +115,13 @@ const CATALOG: Record<SoundName, (v: Voice, step: number) => void> = {
   round: (v) => {
     for (const [ratio, amp] of [[1, 0.1], [2.76, 0.04], [5.4, 0.02]] as const) tone(v, 880 * ratio, 'sine', amp, 0.003, 0.9);
   },
+  dealTile: (v, step) => {
+    // Loseta que cae en su expositor: clink cerámico corto; cada expositor, un tono.
+    const base = 1500 * 2 ** (((step % 9) * 2) / 12);
+    noiseBurst(v, 'bandpass', base * 1.7, 7, 0.07, 0.025);
+    tone(v, base, 'sine', 0.06, 0.002, 0.07);
+    tone(v, base * 1.51, 'sine', 0.03, 0.002, 0.05);
+  },
   deal: (v) => {
     for (let i = 0; i < 7; i++) noiseBurst(v, 'bandpass', 2400 + i * 140, 4, 0.06, 0.03, i * 0.05);
   },
