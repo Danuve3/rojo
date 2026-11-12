@@ -5,7 +5,7 @@ import type { SavedGame } from '../session';
 import { logo } from './common';
 import { nextTagline, TAGLINES } from '../taglines';
 
-const ROTATE_MS = 7000;
+const ROTATE_MS = 5000;
 
 function rotatingTagline(): { el: HTMLParagraphElement; stop: () => void } {
   let idx = nextTagline(-1);
