@@ -1,8 +1,8 @@
 import { bit, COL_BONUS, COLOR_BONUS, FIRST_TOKEN, floorPenalty, ROW_BONUS, TILES_PER_FACTORY, wallCol } from './constants';
 import { nextRandom } from './rng';
 import { sum } from './state';
-import type { Bonus, Color, FloorPenalty, GameState, Placement, RoundSummary } from './types';
-import { completeColors, completeCols, completeRows, placementScore } from './wall';
+import type { Bonus, Color, FloorPenalty, GameState, Placement, PlayerState, RoundSummary } from './types';
+import { completeColors, completeCols, completeRows, placementScore, rowCount } from './wall';
 
 /** Saca una loseta de la bolsa; si se vacía, se rellena con la caja. -1 si no queda nada. */
 export function drawTile(s: GameState): number {
@@ -73,6 +73,18 @@ export function applyFloor(s: GameState, player: number): FloorPenalty {
   for (const t of p.floor) if (t !== FIRST_TOKEN) s.box[t]++;
   p.floor = [];
   return { player, slots, penalty, scoreAfter: p.score };
+}
+
+/**
+ * Filas que un jugador completará al alicatar esta ronda: líneas de patrón llenas cuya
+ * fila del muro ya tiene las otras 4 losetas. Si hay alguna, la partida acaba esta ronda.
+ */
+export function pendingRowCompletions(p: PlayerState): number[] {
+  const rows: number[] = [];
+  for (let r = 0; r < 5; r++) {
+    if (p.lineCount[r] === r + 1 && rowCount(p.wall, r) === 4) rows.push(r);
+  }
+  return rows;
 }
 
 export function isGameEndTriggered(s: GameState): boolean {

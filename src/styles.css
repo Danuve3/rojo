@@ -497,3 +497,18 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .improve-list p { margin: 2px 0 0; line-height: 1.45; }
 .improve-list .todo { background: var(--slot); border-radius: 8px; padding: 6px 8px; margin-top: 4px; }
 .improve-list .todo-mark { color: var(--accent); font-weight: 700; }
+
+/* ---------- final desencadenado ---------- */
+.board.ender { border-color: #e3a93a; box-shadow: 0 0 0 3px rgba(227, 169, 58, 0.28), var(--shadow); }
+.b-end {
+  font-size: 0.72rem; font-weight: 800; color: #3a2500; background: #e3a93a; padding: 1px 6px;
+  border-radius: 6px; white-space: nowrap;
+}
+.compact .b-end { font-size: 0.65rem; padding: 0 4px; }
+.b-line.ending { box-shadow: 0 0 0 2px #e3a93a; background: rgba(227, 169, 58, 0.14); }
+.end-notice {
+  position: absolute; left: 12px; right: 12px; max-width: 520px; margin: 0 auto; z-index: 2;
+  background: #e3a93a; color: #3a2500; font-weight: 700; font-size: 0.92rem; line-height: 1.35;
+  padding: 10px 14px; border-radius: 12px; box-shadow: var(--float-shadow); pointer-events: auto; text-align: center;
+}
+.end-notice.above { transform-origin: bottom; translate: 0 -100%; }

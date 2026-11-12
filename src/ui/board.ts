@@ -15,6 +15,8 @@ export interface BoardView {
   head: HTMLDivElement;
   setScore(n: number): void;
   setActive(on: boolean): void;
+  /** Marca persistente de quien ha desencadenado el final (con las líneas causantes). */
+  setEnder(rows: number[]): void;
 }
 
 export interface BoardOptions {
@@ -69,9 +71,11 @@ export function buildBoard(o: BoardOptions): BoardView {
   const badges: HTMLSpanElement[] = [];
   const wallCells: HTMLDivElement[] = [];
   const score = h('span', { class: 'b-score', 'aria-label': 'Puntos' }, '0');
+  const endFlag = h('span', { class: 'b-end', hidden: true, title: 'Ha desencadenado el final: es la última ronda' }, o.compact ? '🏁' : '🏁 Final');
   const head = h('div', { class: 'b-head' },
     h('span', { class: 'b-name' }, o.name),
     o.tag ? h('span', { class: 'b-tag' }, o.tag) : null,
+    endFlag,
     score);
   const lines = buildLines(o.player, slots, badges);
   const floor = buildFloor(o.player, slots, o.compact);
@@ -88,6 +92,12 @@ export function buildBoard(o: BoardOptions): BoardView {
     },
     setActive(on) {
       el.classList.toggle('active', on);
+    },
+    setEnder(rows) {
+      const on = rows.length > 0;
+      el.classList.toggle('ender', on);
+      endFlag.hidden = !on;
+      lines.forEach((l, r) => l.classList.toggle('ending', rows.includes(r)));
     },
   };
 }

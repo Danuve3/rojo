@@ -1,6 +1,6 @@
 import {
   type Bonus, FIRST_TOKEN, type FloorPenalty, floorPenalty, FLOOR_SIZE, type GameState, type Move, type Placement,
-  type Source, type Target, type TurnResult, validTargets, sum, rowCount, colCount, colorCount,
+  type Source, type Target, type TurnResult, validTargets, sum, rowCount, colCount, colorCount, pendingRowCompletions,
 } from '../engine';
 import { describeMove, explainGood } from '../coach/explain';
 import type { MoveAnalysis, Verdict } from '../coach/types';
@@ -239,6 +239,54 @@ export class GameView {
     return m;
   }
 
+  /** Jugadores que ya han anunciado el final en esta ronda. */
+  private enders = new Set<number>();
+
+  /** Marca a quien desencadena el final; con `announce`, avisa a los nuevos. */
+  private refreshEnders(s: GameState, announce: boolean): void {
+    if (s.phase !== 'playing') return;
+    s.players.forEach((p, i) => {
+      const rows = pendingRowCompletions(p);
+      this.boards[i].setEnder(rows);
+      if (!rows.length || this.enders.has(i)) return;
+      this.enders.add(i);
+      if (announce) this.announceEnd(i);
+    });
+  }
+
+  private announceEnd(player: number): void {
+    const name = this.config.players[player].name;
+    const first = this.enders.size === 1;
+    const text = player === HUMAN
+      ? '¡Has desencadenado el final! Al alicatar completarás una fila: esta es la última ronda.'
+      : first
+        ? `${name} completará una fila: ¡esta es la última ronda!`
+        : `${name} también completará una fila.`;
+    this.ev.sound('round');
+    if (player === HUMAN) this.ev.haptic([20, 40, 20]);
+    this.notice(text, this.boards[player].el);
+  }
+
+  /** Aviso destacado junto al tablero de un jugador. */
+  private notice(text: string, near: HTMLElement): void {
+    const el = h('div', { class: 'end-notice', role: 'status' }, '🏁 ', text);
+    const o = this.originRect();
+    const r = near.getBoundingClientRect();
+    const below = r.top - o.top < o.height / 2;
+    el.style.top = `${below ? r.bottom - o.top + 6 : r.top - o.top - 6}px`;
+    el.classList.add(below ? 'below' : 'above');
+    this.fx.append(el);
+    const ts = this.timeScale();
+    const a = el.animate([
+      { opacity: 0, transform: `translateY(${below ? -8 : 8}px)` },
+      { opacity: 1, transform: 'translateY(0)', offset: 0.08 },
+      { opacity: 1, transform: 'translateY(0)', offset: 0.9 },
+      { opacity: 0, transform: 'translateY(0)' },
+    ], { duration: Math.max(2600, 4200 * Math.max(ts, 0.6)), easing: 'ease-out' });
+    a.finished.finally(() => el.remove());
+    el.addEventListener('click', () => a.finish());
+  }
+
   private updateChrome(s: GameState): void {
     this.roundLabel.textContent = s.phase === 'over' ? 'Fin de la partida' : `Ronda ${s.round}`;
     this.table.bagCount.textContent = String(sum(s.bag));
@@ -248,6 +296,8 @@ export class GameView {
 
   sync(s: GameState): void {
     this.state = s;
+    this.enders.clear();
+    this.refreshEnders(s, false);
     this.tokenAtCenter = false;
     this.layer.sync(this.viewModel(s));
     this.scoreShown = s.players.map((p) => p.score);
@@ -281,6 +331,7 @@ export class GameView {
     this.updateChrome(s);
     await this.layer.transition(this.viewModel(s));
     this.landingBot = false;
+    this.refreshEnders(s, true);
   }
 
   /** Alicatado de una fila (todos los jugadores a la vez). */

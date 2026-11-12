@@ -188,3 +188,18 @@ describe('desempate', () => {
     expect(winners(s)).toEqual([0, 1]);
   });
 });
+
+describe('aviso de fin de partida', () => {
+  it('detecta la línea que completará una fila al alicatar', async () => {
+    const { pendingRowCompletions } = await import('../src/engine');
+    const s = emptyGame();
+    const p = s.players[0];
+    p.wall = wallOf([[2, 0], [2, 1], [2, 2], [2, 3]]);
+    expect(pendingRowCompletions(p)).toEqual([]);
+    p.lineColor[2] = wallColor(2, 4);
+    p.lineCount[2] = 2;
+    expect(pendingRowCompletions(p)).toEqual([]);
+    p.lineCount[2] = 3;
+    expect(pendingRowCompletions(p)).toEqual([2]);
+  });
+});
