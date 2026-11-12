@@ -1,4 +1,5 @@
 import type { ErrorTag } from '../../coach/types';
+import { ratePlayer } from '../../coach/rating';
 import { TAG_INFO } from '../../coach/verdict';
 import { type HistoryEntry, loadHistory } from '../../storage/history';
 import type { App } from '../app';
@@ -6,6 +7,20 @@ import { barList, lineChart } from '../charts';
 import { h } from '../dom';
 import { screen } from './common';
 import { LEVEL_NAMES } from './setup';
+
+function evaluationCard(games: HistoryEntry[]): HTMLElement | null {
+  const r = ratePlayer(games);
+  if (!r) return null;
+  const meter = h('div', { class: 'grade-meter', role: 'img', 'aria-label': `Nota ${r.grade} de 100` }, h('span', { class: 'grade-fill' }));
+  (meter.firstChild as HTMLElement).style.width = `${r.grade}%`;
+  return h('section', { class: 'card evaluation' },
+    h('h2', {}, 'Evaluación del entrenador'),
+    h('div', { class: 'grade-row' },
+      h('div', { class: 'grade' }, h('span', { class: 'grade-num' }, String(r.grade)), h('span', { class: 'grade-max' }, '/100')),
+      h('div', { class: 'grade-side' }, h('b', {}, r.title), r.provisional ? h('span', { class: 'chip' }, 'Provisional') : null)),
+    meter,
+    ...r.paragraphs.map((p) => h('p', { class: 'eval-p' }, p)));
+}
 
 function stat(label: string, value: string): HTMLElement {
   return h('div', { class: 'stat' }, h('span', { class: 'stat-val' }, value), h('span', { class: 'muted small' }, label));
@@ -61,7 +76,8 @@ export function progressScreen(root: HTMLElement, app: App): void {
     const avg = games.reduce((a, g) => a + g.myScore, 0) / games.length;
     const accs = games.filter((g) => g.accuracy !== null).slice(-10);
     const acc = accs.length ? accs.reduce((a, g) => a + (g.accuracy as number), 0) / accs.length : null;
-    body.replaceChildren(
+    body.replaceChildren(...[
+      evaluationCard(games),
       h('section', { class: 'card stats' },
         stat('partidas', String(games.length)),
         stat('victorias', `${Math.round((100 * wins) / games.length)}%`),
@@ -69,6 +85,7 @@ export function progressScreen(root: HTMLElement, app: App): void {
         stat('precisión (últimas 10)', acc === null ? '—' : `${Math.round(acc)}%`)),
       h('section', { class: 'card' }, h('h2', {}, 'Precisión'), accuracySection(games)),
       h('section', { class: 'card' }, h('h2', {}, 'Victorias por nivel de rival'), h('p', { class: 'muted small' }, 'Partidas en las que acabaste por delante de un rival de ese nivel.'), levelSection(games)),
-      h('section', { class: 'card' }, h('h2', {}, 'Errores recurrentes'), errorsSection(games)));
+      h('section', { class: 'card' }, h('h2', {}, 'Errores recurrentes'), errorsSection(games)),
+    ].filter((x): x is HTMLElement => x !== null));
   });
 }

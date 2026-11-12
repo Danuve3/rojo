@@ -476,3 +476,14 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 }
 :root[data-theme='dark'] .tile-inner svg { filter: drop-shadow(0 0 0.8px rgba(255, 240, 220, 0.55)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55)); }
 :root[data-theme='dark'] .tile-inner.lifted svg { filter: drop-shadow(0 0 0.8px rgba(255, 240, 220, 0.55)) drop-shadow(0 7px 6px rgba(0, 0, 0, 0.6)); }
+
+/* ---------- evaluación del entrenador ---------- */
+.grade-row { display: flex; align-items: center; gap: 14px; }
+.grade { display: flex; align-items: baseline; }
+.grade-num { font: 700 3.2rem/1 Georgia, serif; color: var(--accent); }
+.grade-max { font: 700 1.1rem Georgia, serif; color: var(--muted); margin-left: 2px; }
+.grade-side { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.grade-meter { height: 8px; border-radius: 4px; background: var(--slot); margin: 10px 0 4px; overflow: hidden; }
+.grade-fill { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.eval-p { margin: 8px 0 0; line-height: 1.5; }
+.evaluation .eval-p:last-child { color: var(--muted); font-size: 0.85rem; }
