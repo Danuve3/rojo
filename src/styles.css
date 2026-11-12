@@ -486,4 +486,9 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .grade-meter { height: 8px; border-radius: 4px; background: var(--slot); margin: 10px 0 4px; overflow: hidden; }
 .grade-fill { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
 .eval-p { margin: 8px 0 0; line-height: 1.5; }
-.evaluation .eval-p:last-child { color: var(--muted); font-size: 0.85rem; }
+
+.improve { border-top: 1px solid var(--edge); margin-top: 12px; padding-top: 4px; }
+.improve-list { padding-left: 1.3em; margin: 4px 0 0; }
+.improve-list li { margin-bottom: 10px; }
+.improve-list li::marker { font-weight: 700; color: var(--accent); }
+.improve-list p { margin: 2px 0 0; line-height: 1.45; }

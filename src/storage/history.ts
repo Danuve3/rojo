@@ -1,3 +1,4 @@
+import type { GameStats } from '../coach/stats';
 import type { ErrorTag, VerdictLabel } from '../coach/types';
 import { addRecord, GAMES, getAll } from './db';
 
@@ -15,6 +16,10 @@ export interface HistoryEntry {
   labels: Partial<Record<VerdictLabel, number>>;
   tags: Partial<Record<ErrorTag, number>>;
   rounds: number;
+  /** Estadísticas detalladas (partidas guardadas desde la versión con mejoras concretas). */
+  stats?: GameStats;
+  /** Puntuación media de los rivales. */
+  rivalAvg?: number;
 }
 
 export function saveHistory(e: HistoryEntry): Promise<void> {

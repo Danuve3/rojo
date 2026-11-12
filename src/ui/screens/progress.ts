@@ -1,4 +1,5 @@
 import type { ErrorTag } from '../../coach/types';
+import { improvementsFor } from '../../coach/improvements';
 import { ratePlayer } from '../../coach/rating';
 import { TAG_INFO } from '../../coach/verdict';
 import { type HistoryEntry, loadHistory } from '../../storage/history';
@@ -19,7 +20,21 @@ function evaluationCard(games: HistoryEntry[]): HTMLElement | null {
       h('div', { class: 'grade' }, h('span', { class: 'grade-num' }, String(r.grade)), h('span', { class: 'grade-max' }, '/100')),
       h('div', { class: 'grade-side' }, h('b', {}, r.title), r.provisional ? h('span', { class: 'chip' }, 'Provisional') : null)),
     meter,
-    ...r.paragraphs.map((p) => h('p', { class: 'eval-p' }, p)));
+    ...r.paragraphs.map((p) => h('p', { class: 'eval-p' }, p)),
+    improvementsList(games));
+}
+
+function improvementsList(games: HistoryEntry[]): HTMLElement {
+  const items = improvementsFor(games);
+  if (!items.length) {
+    return h('div', { class: 'improve' }, h('h3', { class: 'h3' }, 'Qué mejorar'),
+      h('p', { class: 'muted small' }, games.some((g) => g.stats)
+        ? 'No veo nada concreto que te esté costando puntos de forma repetida. Sube la dificultad.'
+        : 'Termina una partida más y te digo exactamente qué corregir.'));
+  }
+  return h('div', { class: 'improve' },
+    h('h3', { class: 'h3' }, 'Qué mejorar, por orden de importancia'),
+    h('ol', { class: 'improve-list' }, ...items.map((i) => h('li', {}, h('b', {}, i.title), h('p', { class: 'small' }, i.detail)))));
 }
 
 function stat(label: string, value: string): HTMLElement {
