@@ -281,9 +281,9 @@ export class GameView {
       for (let i = 0; i < cells.length; i++) {
         const slot = wallSlot(pl.player, Math.floor(cells[i] / 5), cells[i] % 5);
         void this.layer.pulse(slot, [
-          { filter: 'brightness(1)', transform: 'scale(1)' },
-          { filter: 'brightness(1.6)', transform: 'scale(1.18)' },
-          { filter: 'brightness(1)', transform: 'scale(1)' },
+          { transform: 'scale(1)', opacity: 1 },
+          { transform: 'scale(1.22)', opacity: 0.85 },
+          { transform: 'scale(1)', opacity: 1 },
         ], 280);
         if (mine) this.ev.sound('score', { step: i });
         await wait(110 * ts);

@@ -37,7 +37,7 @@ export interface LayerHooks {
 const BASE = 64;
 
 function transformOf(r: SlotRect, scaleMul = 1, dy = 0): string {
-  return `translate3d(${r.x}px, ${r.y + dy}px, 0) scale(${(r.size / BASE) * scaleMul})`;
+  return `translate(${r.x}px, ${r.y + dy}px) scale(${(r.size / BASE) * scaleMul})`;
 }
 
 function dist2(a: SlotRect, b: SlotRect): number {

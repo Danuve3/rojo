@@ -39,6 +39,8 @@
   --grid: rgba(110, 80, 40, 0.13);
   --zero: rgba(110, 80, 40, 0.45);
   --ghost: 0.2;
+  --tile-shadow: 0 2px 2px rgba(40, 25, 5, 0.32);
+  --tile-shadow-lifted: 0 8px 8px rgba(40, 25, 5, 0.32);
   --pattern-a: rgba(42, 93, 176, 0.06);
   --pattern-b: rgba(42, 93, 176, 0.035);
   --chip-excelente: #1e6b42;
@@ -87,6 +89,8 @@
     --grid: rgba(255, 236, 210, 0.1);
     --zero: rgba(255, 236, 210, 0.35);
     --ghost: 0.26;
+  --tile-shadow: 0 0 0 1px rgba(255, 240, 220, 0.3), 0 2px 3px rgba(0, 0, 0, 0.55);
+  --tile-shadow-lifted: 0 0 0 1px rgba(255, 240, 220, 0.3), 0 8px 9px rgba(0, 0, 0, 0.6);
     --pattern-a: rgba(130, 168, 238, 0.06);
     --pattern-b: rgba(130, 168, 238, 0.035);
     --chip-excelente: #7fd6a4;
@@ -133,6 +137,8 @@
   --grid: rgba(255, 236, 210, 0.1);
   --zero: rgba(255, 236, 210, 0.35);
   --ghost: 0.26;
+  --tile-shadow: 0 0 0 1px rgba(255, 240, 220, 0.3), 0 2px 3px rgba(0, 0, 0, 0.55);
+  --tile-shadow-lifted: 0 0 0 1px rgba(255, 240, 220, 0.3), 0 8px 9px rgba(0, 0, 0, 0.6);
   --pattern-a: rgba(130, 168, 238, 0.06);
   --pattern-b: rgba(130, 168, 238, 0.035);
   --chip-excelente: #7fd6a4;
@@ -220,7 +226,7 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 
 .screen.home { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; }
 .logo { display: flex; gap: 6px; }
-.logo-tile { position: relative; width: 64px; height: 64px; filter: drop-shadow(0 4px 6px rgba(60, 30, 0, 0.25)); }
+.logo-tile { position: relative; width: 64px; height: 64px; border-radius: 12%; box-shadow: 0 4px 8px rgba(60, 30, 0, 0.25); }
 .logo-tile svg { width: 100%; height: 100%; }
 .tagline { margin: 0; font-style: italic; color: var(--muted); font-family: Georgia, serif; text-align: center; max-width: 320px; min-height: 2.9em; line-height: 1.45; }
 .menu { display: flex; flex-direction: column; gap: 10px; width: min(320px, 100%); }
@@ -293,7 +299,7 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .slot { width: var(--c); height: var(--c); border-radius: calc(var(--c) * 0.16); background: var(--slot); flex: none; }
 .b-wall { display: grid; grid-template-columns: repeat(5, var(--c)); gap: var(--g); }
 .cell { position: relative; }
-.cell .tile-svg { width: 100%; height: 100%; opacity: var(--ghost); display: block; filter: saturate(0.6); }
+.cell .tile-svg { width: 100%; height: 100%; opacity: var(--ghost); display: block; }
 .b-floor { display: flex; gap: var(--g); margin-top: calc(var(--c) * 0.22); position: relative; border-radius: 6px; padding-right: 3.2em; }
 .compact .b-floor { margin-top: 3px; padding-right: 0; }
 .fslot { position: relative; background: rgba(200, 64, 46, 0.09); }
@@ -333,17 +339,21 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 /* ---------- capa de losetas ---------- */
 .tile-layer { position: absolute; inset: 0; pointer-events: none; z-index: 10; overflow: hidden; }
 .tile {
-  position: absolute; left: 0; top: 0; width: 64px; height: 64px; transform-origin: 0 0; will-change: transform;
+  position: absolute; left: 0; top: 0; width: 64px; height: 64px; transform-origin: 0 0;
   contain: layout style;
 }
-.tile.flying { z-index: 3; }
-.tile-inner { width: 100%; height: 100%; transition: transform 0.16s ease, filter 0.16s ease, opacity 0.16s ease; border-radius: 16%; }
-.tile-inner svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 1.5px rgba(40, 25, 5, 0.35)); }
+.tile.flying { z-index: 3; will-change: transform; }
+.tile-inner {
+  width: 100%; height: 100%; transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+  border-radius: 13%; box-shadow: var(--tile-shadow);
+}
+.tile-inner svg { width: 100%; height: 100%; display: block; }
+.tile[data-color='5'] .tile-inner { border-radius: 50%; }
 .tile-layer.interactive .tile[data-zone='factory'], .tile-layer.interactive .tile[data-zone='center'] { pointer-events: auto; cursor: pointer; }
 .tile-inner.lifted { transform: translateY(-9%) scale(1.12); }
-.tile-inner.lifted svg { filter: drop-shadow(0 7px 5px rgba(40, 25, 5, 0.4)); }
+.tile-inner.lifted { box-shadow: var(--tile-shadow-lifted); }
 .tile-inner.dim { opacity: 0.55; }
-.tile-inner.hinted { box-shadow: 0 0 0 4px #e3a93a; }
+.tile-inner.hinted { box-shadow: 0 0 0 4px #e3a93a, var(--tile-shadow); }
 
 /* ---------- efectos ---------- */
 .fx-layer { position: absolute; inset: 0; pointer-events: none; z-index: 20; overflow: hidden; }
@@ -412,9 +422,9 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .hint-panel li { cursor: pointer; border-radius: 8px; }
 .hint-panel li:active { background: var(--slot); }
 .hint-val { color: var(--muted); font-size: 0.8rem; }
-.tile-inner.hinted.h1 { box-shadow: 0 0 0 4px #e3a93a; }
-.tile-inner.hinted.h2 { box-shadow: 0 0 0 3px rgba(227, 169, 58, 0.7); }
-.tile-inner.hinted.h3 { box-shadow: 0 0 0 2px rgba(227, 169, 58, 0.5); }
+.tile-inner.hinted.h1 { box-shadow: 0 0 0 4px #e3a93a, var(--tile-shadow); }
+.tile-inner.hinted.h2 { box-shadow: 0 0 0 3px rgba(227, 169, 58, 0.7), var(--tile-shadow); }
+.tile-inner.hinted.h3 { box-shadow: 0 0 0 2px rgba(227, 169, 58, 0.5), var(--tile-shadow); }
 .verdict .v-icon { font-family: Georgia, serif; }
 .verdict .v-best { margin-top: 4px; color: var(--muted); }
 .icon-btn.close { width: 36px; height: 36px; }
@@ -469,13 +479,6 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .err-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .errors p { margin: 2px 0 0; }
 
-/* En oscuro, un contorno claro sutil separa las losetas oscuras del fondo. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .tile-inner svg { filter: drop-shadow(0 0 0.8px rgba(255, 240, 220, 0.55)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55)); }
-  :root:not([data-theme='light']) .tile-inner.lifted svg { filter: drop-shadow(0 0 0.8px rgba(255, 240, 220, 0.55)) drop-shadow(0 7px 6px rgba(0, 0, 0, 0.6)); }
-}
-:root[data-theme='dark'] .tile-inner svg { filter: drop-shadow(0 0 0.8px rgba(255, 240, 220, 0.55)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55)); }
-:root[data-theme='dark'] .tile-inner.lifted svg { filter: drop-shadow(0 0 0.8px rgba(255, 240, 220, 0.55)) drop-shadow(0 7px 6px rgba(0, 0, 0, 0.6)); }
 
 /* ---------- evaluación del entrenador ---------- */
 .grade-row { display: flex; align-items: center; gap: 14px; }
