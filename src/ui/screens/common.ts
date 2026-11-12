@@ -1,6 +1,6 @@
 import { h } from '../dom';
 import type { App } from '../app';
-import { tileSvg } from '../tileArt';
+import { logoTileSvg } from '../tileArt';
 
 export function screen(title: string, app: App, ...children: Array<Node | null>): HTMLDivElement {
   const back = h('button', { class: 'icon-btn', 'aria-label': 'Volver' }, '‹');
@@ -14,7 +14,7 @@ export function logo(): HTMLDivElement {
   const word = 'ROJO';
   const colors = [2, 1, 0, 2];
   return h('div', { class: 'logo', role: 'img', 'aria-label': 'Rojo' },
-    ...word.split('').map((ch, i) => h('span', { class: 'logo-tile' }, tileSvg(colors[i]), h('b', {}, ch))));
+    ...word.split('').map((ch, i) => h('span', { class: 'logo-tile' }, logoTileSvg(colors[i], ch))));
 }
 
 export function toggle(label: string, checked: boolean, onChange: (v: boolean) => void, hint?: string): HTMLLabelElement {

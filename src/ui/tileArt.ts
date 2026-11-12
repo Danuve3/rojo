@@ -92,3 +92,18 @@ export function tileSvg(color: number, size?: number): SVGSVGElement {
   return s('svg', { viewBox: '0 0 100 100', width: size, height: size, class: 'tile-svg', 'aria-hidden': 'true' },
     s('use', { href: tileHref(color) }));
 }
+
+/** Azulejo del logo: esmalte, borde y esquinas, sin símbolo, con una letra grande. */
+export function logoTileSvg(color: number, letter: string): SVGSVGElement {
+  const st = STYLES[color];
+  const shadow = color === 1 || color === 4 ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.35)';
+  return s('svg', { viewBox: '0 0 100 100', class: 'logo-svg', 'aria-hidden': 'true' },
+    s('rect', { x: 2, y: 2, width: 96, height: 96, rx: 12, fill: `url(#g${color})` }),
+    s('rect', { x: 7, y: 7, width: 86, height: 86, rx: 8, fill: 'none', stroke: st.ink, 'stroke-width': 2, opacity: 0.45 }),
+    cornerMotifs(st.ink),
+    s('text', { x: 50, y: 52, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': 'Georgia, \'Times New Roman\', serif',
+      'font-weight': 700, 'font-size': 64, fill: shadow, transform: 'translate(0 3)' }, letter),
+    s('text', { x: 50, y: 52, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-family': 'Georgia, \'Times New Roman\', serif',
+      'font-weight': 700, 'font-size': 64, fill: st.ink }, letter),
+    s('path', { d: 'M10 30 Q12 10 32 9 L60 9 Q30 14 14 40 Z', fill: '#fff', opacity: 0.28 }));
+}
