@@ -45,7 +45,9 @@ export function homeScreen(root: HTMLElement, app: App): () => void {
       btn('Progreso', 'progress'),
       btn('Cómo jugar', 'howto'),
       btn('Ajustes', 'settings')),
-    h('p', { class: 'foot muted' }, 'Funciona sin conexión · v', __APP_VERSION__)));
+    h('footer', { class: 'foot muted' },
+      h('p', {}, 'Funciona sin conexión · v', __APP_VERSION__),
+      h('p', { class: 'author' }, 'Danuve'))));
   void kvGet<SavedGame>('current').then((g) => {
     if (g && g.state.phase === 'playing') {
       cont.hidden = false;

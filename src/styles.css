@@ -230,7 +230,9 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .logo-tile svg { width: 100%; height: 100%; }
 .tagline { margin: 0; font-style: italic; color: var(--muted); font-family: Georgia, serif; text-align: center; max-width: 320px; min-height: 2.9em; line-height: 1.45; }
 .menu { display: flex; flex-direction: column; gap: 10px; width: min(320px, 100%); }
-.foot { font-size: 0.8rem; }
+.foot { font-size: 0.8rem; text-align: center; }
+.foot p { margin: 0; }
+.foot .author { font-size: 0.7rem; margin-top: 4px; letter-spacing: 0.08em; opacity: 0.8; }
 
 .bot-row { padding: 6px 0; }
 .bot-label { display: flex; justify-content: space-between; font-weight: 600; }
