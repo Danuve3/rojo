@@ -43,3 +43,16 @@ describe('motor del entrenador', () => {
     expect(explainLoss(v!.mine, v!.best, ['Tú', 'Bot']).length).toBeGreaterThan(0);
   });
 });
+
+describe('frases de inicio', async () => {
+  const { TAGLINES, nextTagline } = await import('../src/ui/taglines');
+  it('hay 20 y nunca se repite la anterior', () => {
+    expect(TAGLINES).toHaveLength(20);
+    let prev = -1;
+    for (let i = 0; i < 200; i++) {
+      const n = nextTagline(prev);
+      expect(n).not.toBe(prev);
+      prev = n;
+    }
+  });
+});
