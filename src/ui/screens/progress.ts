@@ -27,14 +27,18 @@ function evaluationCard(games: HistoryEntry[]): HTMLElement | null {
 function improvementsList(games: HistoryEntry[]): HTMLElement {
   const items = improvementsFor(games);
   if (!items.length) {
-    return h('div', { class: 'improve' }, h('h3', { class: 'h3' }, 'Qué mejorar'),
+    return h('div', { class: 'improve' }, h('h3', { class: 'h3' }, 'Para tus próximas partidas'),
       h('p', { class: 'muted small' }, games.some((g) => g.stats)
         ? 'No veo nada concreto que te esté costando puntos de forma repetida. Sube la dificultad.'
         : 'Termina una partida más y te digo exactamente qué corregir.'));
   }
   return h('div', { class: 'improve' },
-    h('h3', { class: 'h3' }, 'Qué mejorar, por orden de importancia'),
-    h('ol', { class: 'improve-list' }, ...items.map((i) => h('li', {}, h('b', {}, i.title), h('p', { class: 'small' }, i.detail)))));
+    h('h3', { class: 'h3' }, 'Para tus próximas partidas'),
+    h('p', { class: 'muted small' }, 'Por orden de importancia: lo primero es lo que más puntos te cuesta.'),
+    h('ol', { class: 'improve-list' }, ...items.map((i) => h('li', {},
+      h('b', {}, i.title),
+      h('p', { class: 'small muted' }, i.why),
+      h('p', { class: 'small todo' }, h('span', { class: 'todo-mark', 'aria-hidden': 'true' }, '→ '), i.todo)))));
 }
 
 function stat(label: string, value: string): HTMLElement {

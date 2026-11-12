@@ -51,11 +51,12 @@ describe('mejoras concretas', () => {
     expect(titles[0]).toBe('Deja de alimentar el suelo');
     expect(titles).toContain('Juega a por los bonus');
     expect(titles).toContain('Coloca pegado a lo que ya tienes');
-    expect(items[0].detail).toContain('30,0 puntos');
+    expect(items[0].why).toContain('30,0 puntos');
+    for (const i of items) expect(i.todo.length).toBeGreaterThan(20);
     for (let i = 1; i < items.length; i++) expect(items[i - 1].cost).toBeGreaterThanOrEqual(items[i].cost);
   });
   it('sugiere subir de nivel si ganas casi siempre', () => {
     const items = improvementsFor(Array.from({ length: 6 }, () => entry({}, { opponents: [{ name: 'B', level: 4, score: 30, beaten: true }] })));
-    expect(items.some((i) => i.title === 'Sube la dificultad' && i.detail.includes('nivel 5'))).toBe(true);
+    expect(items.some((i) => i.title === 'Sube la dificultad' && i.todo.includes('nivel 5'))).toBe(true);
   });
 });
