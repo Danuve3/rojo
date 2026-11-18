@@ -182,19 +182,37 @@ export function trainScreen(root: HTMLElement, app: App): void {
 
   // ---------- lecciones ----------
   void loadLessons().then((prog) => {
+    /** Por qué está bloqueada una lección y qué hace falta para abrirla. */
+    const lockReason = (i: number): string => {
+      const prev = LESSONS[i - 1];
+      const prevUnlocked = i - 1 === 0 || !!prog[LESSONS[i - 2].id]?.done;
+      if (!prevUnlocked) return `Primero tienes que superar «${prev.title}», que también está bloqueada.`;
+      const best = prog[prev.id]?.best;
+      return best === undefined
+        ? `Se desbloquea al acertar 4 de 5 ejercicios en «${prev.title}». Aún no la has intentado.`
+        : `Se desbloquea al acertar 4 de 5 ejercicios en «${prev.title}». Tu mejor resultado ahí: ${best} de 5.`;
+    };
     lessonsBox.replaceChildren(h('ol', { class: 'lessons' }, ...LESSONS.map((l, i) => {
       const p = prog[l.id];
       const unlocked = i === 0 || !!prog[LESSONS[i - 1].id]?.done;
-      const status = p?.done ? `✓ ${p.best}/5` : unlocked ? 'Disponible' : '🔒 Bloqueada';
-      const b = h('button', { class: `lesson${unlocked ? '' : ' locked'}`, disabled: !unlocked },
-        h('span', { class: 'lesson-title' }, l.title), h('span', { class: 'muted small' }, l.summary), h('span', { class: 'lesson-status' }, status));
+      const status = p?.done ? `✓ ${p.best}/5` : !unlocked ? '🔒' : p ? `${p.best}/5` : 'Disponible';
+      const note = !unlocked
+        ? h('span', { class: 'lesson-lock' }, lockReason(i))
+        : p && !p.done ? h('span', { class: 'lesson-lock' }, `Tu mejor resultado: ${p.best} de 5. Necesitas 4 para superarla.`) : null;
+      const b = h('button', { class: `lesson${unlocked ? '' : ' locked'}`, disabled: !unlocked, 'aria-describedby': `lock-${l.id}` },
+        h('span', { class: 'lesson-title' }, l.title), h('span', { class: 'muted small lesson-sum' }, l.summary),
+        h('span', { class: 'lesson-status' }, status));
+      if (note) {
+        note.id = `lock-${l.id}`;
+        b.append(note);
+      }
       b.addEventListener('click', () => {
         lessonTarget = i;
         app.go('lesson');
       });
       return h('li', {}, b);
     })),
-    h('p', { class: 'small muted' }, 'Acierta 4 de 5 ejercicios para desbloquear la siguiente.'));
+    h('p', { class: 'small muted' }, 'Las lecciones van en orden: acierta 4 de 5 ejercicios para desbloquear la siguiente.'));
   });
 }
 

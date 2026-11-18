@@ -624,7 +624,9 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .lesson .muted { grid-column: 1; }
 .lesson-title { font-weight: 700; }
 .lesson-status { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 0.8rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
-.lesson.locked { opacity: 0.55; cursor: default; }
+.lesson.locked { cursor: default; background: transparent; }
+.lesson.locked .lesson-title, .lesson.locked .lesson-sum { opacity: 0.55; }
+.lesson-lock { grid-column: 1 / -1; font-size: 0.8rem; color: var(--ink); margin-top: 4px; }
 .lesson.locked .lesson-status { color: var(--muted); }
 
 /* ¿Qué cogerá el rival?: aviso abajo (sobre tu tablero) y mesa resaltada. */
