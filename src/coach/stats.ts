@@ -27,6 +27,8 @@ export interface GameStats {
   /** Pérdida media del entrenador en la última ronda y en el resto. */
   lossLastRound: number | null;
   lossEarlier: number | null;
+  /** Muro final (máscara de bits fila*5+col), para el mapa de calor. */
+  finalWall?: number;
 }
 
 /** Repite la partida desde la semilla y las jugadas registradas. */
@@ -71,6 +73,7 @@ export function replayStats(
   st.colsDone = completeCols(p.wall);
   st.colorsDone = completeColors(p.wall);
   st.stuckTiles = sum(p.lineCount);
+  st.finalWall = p.wall;
   const last = records.filter((r) => r.round === st.rounds);
   const earlier = records.filter((r) => r.round !== st.rounds);
   const mean = (xs: MoveRecord[]) => (xs.length ? xs.reduce((a, r) => a + r.loss, 0) / xs.length : null);

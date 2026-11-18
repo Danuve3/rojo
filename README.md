@@ -120,6 +120,12 @@ Se activan en la configuración de partida, sección «Entrenamiento»:
 - **Preguntas de conteo y contador de losetas por salir:** cuántas losetas de cada color quedan en bolsa y caja.
 - **Modo sin ayudas:** sin avisos de suelo, vista previa ni pistas; se registra aparte.
 
+### Estadísticas (v1.3)
+
+- **Elo:** empieza en 1000 y se actualiza tras cada partida contra el Elo fijo de cada nivel de bot (600, 690, 1080, 1170, 1200, 1240, 1300, 1610, 1710, 1770), ajustado con la matriz del torneo. Con **Dificultad automática**, la configuración de partida elige los niveles más cercanos a tu Elo.
+- **Precisión por fase y por decisión:** apertura (rondas 1–2), medio juego y final (última ronda); coger del centro o de un expositor; líneas cortas, largas o directo al suelo; con y sin ayudas.
+- **Mapa de calor del muro:** con qué frecuencia acaba llena cada casilla, frente a la referencia de un bot de nivel 9 (80 partidas contra nivel 7).
+
 ## Decisiones sobre reglas ambiguas
 
 - **Línea llena:** una línea de patrón completa no es un destino válido (aunque sea del mismo color); para tirar losetas a propósito está el suelo.

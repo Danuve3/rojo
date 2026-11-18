@@ -17,6 +17,27 @@ function safeStats(g: SavedGame): GameStats | undefined {
   }
 }
 
+export type BucketId =
+  | 'apertura' | 'medio' | 'final' | 'centro' | 'expositor' | 'corta' | 'larga' | 'suelo';
+
+/** Agrega la precisión de cada jugada por fase de la partida y por tipo de decisión. */
+export function bucketsOf(g: SavedGame): Record<string, { n: number; acc: number }> {
+  const out: Record<string, { n: number; acc: number }> = {};
+  const add = (k: BucketId, a: number) => {
+    const b = (out[k] ??= { n: 0, acc: 0 });
+    b.n++;
+    b.acc += a;
+  };
+  const last = g.state.round;
+  for (const r of g.records) {
+    const a = moveAccuracy(r.loss);
+    add(r.round === last ? 'final' : r.round <= 2 ? 'apertura' : 'medio', a);
+    add(r.move.source === 'center' ? 'centro' : 'expositor', a);
+    add(r.move.target === 'floor' ? 'suelo' : r.move.target <= 2 ? 'corta' : 'larga', a);
+  }
+  return out;
+}
+
 export function accuracyOf(g: SavedGame): number | null {
   if (!g.records.length) return null;
   return g.records.reduce((a, r) => a + moveAccuracy(r.loss), 0) / g.records.length;
@@ -59,6 +80,7 @@ export function summarize(g: SavedGame): HistoryEntry {
     tags: tagCounts(g),
     rounds: s.round,
     stats: safeStats(g),
+    buckets: bucketsOf(g),
     rivalAvg: s.players.filter((_, i) => i !== HUMAN).reduce((a, p) => a + p.score, 0) / (s.numPlayers - 1),
     training: {
       challenge: g.challenge ? { id: g.challenge.id, title: g.challenge.title, done: challengeProgress(g.challenge, g).status === 'ok' } : undefined,

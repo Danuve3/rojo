@@ -101,8 +101,8 @@ export interface Bar {
 }
 
 /** Barras horizontales (0–100 %) con el valor escrito en tinta. */
-export function barList(bars: Bar[]): HTMLElement {
-  return h('div', { class: 'bars' }, ...bars.map((b) =>
+export function barList(bars: Bar[], wideLabels = false): HTMLElement {
+  return h('div', { class: wideLabels ? 'bars wide' : 'bars' }, ...bars.map((b) =>
     h('div', { class: 'bar-row', title: b.detail },
       h('span', { class: 'bar-label' }, b.label),
       h('span', { class: 'bar-track' }, (() => {

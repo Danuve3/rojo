@@ -2,6 +2,7 @@ import { newGame, randomSeed } from '../../engine';
 import { kvGet, kvSet } from '../../storage/db';
 import type { App } from '../app';
 import { pickChallenge } from '../../coach/challenges';
+import { adaptiveLevels, currentElo, START_ELO } from '../../coach/elo';
 import { loadHistory } from '../../storage/history';
 import { botNames, DEFAULT_COACH, DEFAULT_TRAINING, type CoachConfig, type GameConfig, type PlayerConfig, type TrainingConfig } from '../config';
 import { h } from '../dom';
@@ -16,9 +17,11 @@ interface SetupPrefs {
   starter: 'me' | 'random' | 'bot';
   coach: CoachConfig;
   training: TrainingConfig;
+  /** Dificultad automática según el Elo. */
+  auto: boolean;
 }
 
-const DEFAULT_PREFS: SetupPrefs = { bots: 1, levels: [4, 5, 6], starter: 'me', coach: DEFAULT_COACH, training: DEFAULT_TRAINING };
+const DEFAULT_PREFS: SetupPrefs = { bots: 1, levels: [4, 5, 6], starter: 'me', coach: DEFAULT_COACH, training: DEFAULT_TRAINING, auto: false };
 
 export function createGame(prefs: SetupPrefs): SavedGame {
   const names = botNames(prefs.bots);
@@ -49,7 +52,23 @@ export function setupScreen(root: HTMLElement, app: App): void {
   const botsBox = h('div', { class: 'bots' });
   const coachBox = h('div', { class: 'coach-opts' });
 
+  let elo = START_ELO;
+  const autoInfo = h('p', { class: 'muted small' });
+  const autoBox = h('div', {});
+  function renderAuto(): void {
+    autoBox.replaceChildren(toggle('Dificultad automática', prefs.auto, (v) => {
+      prefs.auto = v;
+      renderBots();
+    }, 'Elige el nivel según tu Elo para que las partidas estén igualadas'));
+  }
   function renderBots(): void {
+    if (prefs.auto) {
+      const lv = adaptiveLevels(elo, prefs.bots);
+      prefs.levels = [...lv, ...prefs.levels.slice(lv.length)];
+      autoInfo.textContent = `Tu Elo es ${elo}: ${lv.map((l, i) => `bot ${i + 1} en nivel ${l} (${LEVEL_NAMES[l]})`).join(', ')}.`;
+      botsBox.replaceChildren(autoInfo);
+      return;
+    }
     botsBox.replaceChildren(...Array.from({ length: prefs.bots }, (_, i) => {
       const out = h('output', {}, `${prefs.levels[i]} · ${LEVEL_NAMES[prefs.levels[i]]}`);
       const input = h('input', { type: 'range', min: 1, max: 10, step: 1, value: prefs.levels[i], 'aria-label': `Dificultad del bot ${i + 1}` });
@@ -118,7 +137,7 @@ export function setupScreen(root: HTMLElement, app: App): void {
   });
 
   root.append(screen('Nueva partida', app,
-    h('section', { class: 'card' }, h('h2', {}, 'Rivales'), botsSeg, botsBox),
+    h('section', { class: 'card' }, h('h2', {}, 'Rivales'), botsSeg, autoBox, botsBox),
     h('section', { class: 'card' }, h('h2', {}, '¿Quién empieza?'), starterSeg),
     h('section', { class: 'card' }, h('h2', {}, 'Entrenador'), coachBox),
     h('section', { class: 'card' }, h('h2', {}, 'Entrenamiento'), trainBox),
@@ -126,12 +145,17 @@ export function setupScreen(root: HTMLElement, app: App): void {
 
   const render = () => {
     renderBotsSeg();
+    renderAuto();
     renderBots();
     renderStarter();
     renderCoach();
     renderTraining();
   };
   render();
+  void loadHistory().then((games) => {
+    elo = currentElo(games);
+    if (prefs.auto) renderBots();
+  });
   void kvGet<SetupPrefs>('setupPrefs').then((saved) => {
     if (!saved) return;
     Object.assign(prefs, { ...DEFAULT_PREFS, ...saved, coach: { ...DEFAULT_COACH, ...saved.coach }, training: { ...DEFAULT_TRAINING, ...(saved.training ?? {}) } });

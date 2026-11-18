@@ -20,6 +20,8 @@ export interface HistoryEntry {
   stats?: GameStats;
   /** Puntuación media de los rivales. */
   rivalAvg?: number;
+  /** Precisión por fase y tipo de decisión: suma de precisiones y número de jugadas (v1.3+). */
+  buckets?: Record<string, { n: number; acc: number }>;
   /** Ayudas de entrenamiento (v1.2+). */
   training?: {
     challenge?: { id: string; title: string; done: boolean };
