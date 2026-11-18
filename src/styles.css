@@ -544,7 +544,7 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .end-notice.say.bad { border-left-color: var(--red); }
 .end-notice.say.info { border-left-color: var(--accent); }
 .end-notice.bot-note { font-size: 0.85rem; font-weight: 500; border-left-color: var(--accent); }
-.tile-inner.guessed { box-shadow: 0 0 0 4px var(--accent), var(--tile-shadow); }
+.tile-inner.guessed { transform: translateY(-9%) scale(1.12); box-shadow: 0 0 0 7px var(--accent), var(--tile-shadow-lifted); }
 .hp-predict { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; }
 .hp-predict.good { background: rgba(47, 143, 91, 0.14); color: var(--chip-excelente); }
 .hp-predict.bad { background: rgba(201, 138, 18, 0.16); color: var(--chip-imprecision); }
@@ -626,3 +626,8 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .lesson-status { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 0.8rem; font-weight: 700; color: var(--accent); white-space: nowrap; }
 .lesson.locked { opacity: 0.55; cursor: default; }
 .lesson.locked .lesson-status { color: var(--muted); }
+
+/* ¿Qué cogerá el rival?: aviso abajo (sobre tu tablero) y mesa resaltada. */
+.ask-panel.bottom { top: auto; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); transform: none; }
+.ask-opts.two { grid-template-columns: 1fr 1fr; }
+.table.guessing .factory, .table.guessing .center { box-shadow: 0 0 0 3px var(--accent), 0 3px 8px var(--factory-shadow); }

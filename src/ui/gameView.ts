@@ -14,7 +14,7 @@ import { h, wait } from './dom';
 import { computeSizes } from './layout';
 import { floorSlot, lineSlot, modelFromState, type SlotModel, zoneOf, wallSlot } from './model';
 import { buildTable, type TableView } from './table';
-import { COLOR_NAMES_PLURAL, tileSvg } from './tileArt';
+import { COLOR_NAMES, COLOR_NAMES_PLURAL, tileSvg } from './tileArt';
 import { type Motion, type SlotRect, TileLayer } from './tileLayer';
 
 export type SoundName =
@@ -699,9 +699,7 @@ export class GameView {
     if (this.mode === 'guess') {
       const src = this.sourceOf(slot);
       if (src === null || color === FIRST_TOKEN) return;
-      this.ev.sound('pick');
-      for (const sl of this.sourceTiles(src, color)) this.layer.tileAt(sl)?.inner.classList.add('guessed');
-      this.ev.onGuess({ source: src, color });
+      this.pickGuess({ source: src, color });
       return;
     }
     if (!this.inputOn || !this.state) return;
@@ -861,22 +859,70 @@ export class GameView {
     return this.mode === 'predict';
   }
 
-  /** Pregunta qué cogerá un rival: la mesa se vuelve tocable. Devuelve una función para cerrar. */
+  private guessName = '';
+  private guessPick: { source: Source; color: number } | null = null;
+  private guessSkip: () => void = () => undefined;
+
+  /**
+   * «¿Qué cogerá…?»: la mesa se vuelve tocable. El jugador marca un grupo de losetas y
+   * confirma; hasta entonces puede cambiar de grupo.
+   */
   startGuess(name: string, onSkip: () => void): void {
     this.mode = 'guess';
+    this.hideVerdict();
+    this.guessName = name;
+    this.guessPick = null;
+    this.guessSkip = onSkip;
     this.layer.root.classList.add('interactive');
-    const skip = h('button', { class: 'btn small-btn' }, 'Saltar');
-    skip.addEventListener('click', () => onSkip());
-    this.askEl.replaceChildren(h('p', {}, h('b', {}, `¿Qué cogerá ${name}?`), ' Toca el color y el sitio de donde crees que lo cogerá.'), skip);
+    this.table.el.classList.add('guessing');
+    this.renderGuessPanel();
+    this.setStatus(`¿Qué cogerá ${name}? Toca unas losetas de la mesa`);
+  }
+
+  private renderGuessPanel(): void {
+    const skip = h('button', { class: 'btn small-btn ghost' }, 'Saltar');
+    skip.addEventListener('click', () => this.guessSkip());
+    const pick = this.guessPick;
+    const s = this.state;
+    if (!pick || !s) {
+      this.askEl.replaceChildren(
+        h('p', {}, h('b', {}, `¿Qué cogerá ${this.guessName}?`)),
+        h('p', { class: 'small' }, 'Toca en la mesa el grupo de losetas que crees que se llevará (un color de un expositor o del centro).'),
+        skip);
+    } else {
+      const n = (pick.source === 'center' ? s.center : s.factories[pick.source])[pick.color];
+      const where = pick.source === 'center' ? 'del centro' : `del expositor ${pick.source + 1}`;
+      const ok = h('button', { class: 'btn small-btn primary' }, 'Confirmar');
+      ok.addEventListener('click', () => this.ev.onGuess(pick));
+      this.askEl.replaceChildren(
+        h('p', {}, 'Tu apuesta: ', h('b', {}, `${n} ${n === 1 ? COLOR_NAMES[pick.color] : COLOR_NAMES_PLURAL[pick.color]} ${where}`)),
+        h('p', { class: 'small muted' }, 'Puedes tocar otro grupo para cambiarla.'),
+        h('div', { class: 'ask-opts two' }, skip, ok));
+    }
+    this.askEl.classList.add('bottom');
     this.askEl.hidden = false;
-    this.setStatus(`¿Qué cogerá ${name}?`);
+  }
+
+  private pickGuess(pick: { source: Source; color: number }): void {
+    const chosen = new Set(this.sourceTiles(pick.source, pick.color));
+    for (const t of this.layer.tiles()) {
+      const onTable = !!t.slot && (t.slot.startsWith('f:') || t.slot.startsWith('c:'));
+      t.inner.classList.toggle('guessed', !!t.slot && chosen.has(t.slot));
+      t.inner.classList.toggle('dim', onTable && !(t.slot && chosen.has(t.slot)));
+    }
+    this.guessPick = pick;
+    this.ev.sound('select');
+    this.renderGuessPanel();
   }
 
   endGuess(): void {
     this.mode = 'play';
+    this.guessPick = null;
     this.askEl.hidden = true;
+    this.askEl.classList.remove('bottom');
+    this.table.el.classList.remove('guessing');
     if (!this.inputOn) this.layer.root.classList.remove('interactive');
-    for (const t of this.layer.tiles()) t.inner.classList.remove('guessed');
+    for (const t of this.layer.tiles()) t.inner.classList.remove('guessed', 'dim');
   }
 
   /** Mensaje breve junto a un tablero o a la mesa. */
