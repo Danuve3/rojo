@@ -108,6 +108,18 @@ scripts/     torneo, calibración, benchmark, iconos
 
 Analiza siempre con MCTS y presupuesto generoso (1,5 s, ~30 000 simulaciones) en un worker propio, en porciones de 30 ms para poder cancelarse; cachea por posición. El valor de una jugada es el **margen esperado frente al mejor rival**, llevado a puntos con la escala calibrada, y la pérdida es la diferencia con la mejor jugada. Antes de valorar se fuerzan 400 simulaciones de la jugada hecha y de las 3 mejores candidatas, para que la «mejor» no sea una jugada con pocas simulaciones y valor inflado por suerte. Las explicaciones salen de los 2–3 factores con mayor diferencia entre ambas jugadas.
 
+### Ayudas de entrenamiento (v1.2)
+
+Se activan en la configuración de partida, sección «Entrenamiento»:
+
+- **Reto de la partida:** el primer punto de «Para tus próximas partidas» que se puede medir se convierte en un objetivo con marcador en vivo en la cabecera (🎯). El resultado aparece al final y se acumula en Progreso.
+- **Predice antes de mirar:** con 💡, primero eliges tu jugada candidata (no se juega) y luego ves las tres mejores junto con lo cerca que estabas.
+- **Segunda oportunidad:** si la jugada es una imprecisión o algo peor, la partida se detiene antes de que jueguen los bots y puedes reintentar o pedir la solución.
+- **Explicar las jugadas de los bots:** los bots de nivel 6 o más explican su jugada con los factores de evaluación.
+- **¿Qué hará el rival?:** a veces, antes de que juegue un bot, te pide que señales qué cogerá.
+- **Preguntas de conteo y contador de losetas por salir:** cuántas losetas de cada color quedan en bolsa y caja.
+- **Modo sin ayudas:** sin avisos de suelo, vista previa ni pistas; se registra aparte.
+
 ## Decisiones sobre reglas ambiguas
 
 - **Línea llena:** una línea de patrón completa no es un destino válido (aunque sea del mismo color); para tirar losetas a propósito está el suelo.

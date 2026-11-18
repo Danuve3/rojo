@@ -1,9 +1,11 @@
 import { newGame, randomSeed } from '../../engine';
 import { kvGet, kvSet } from '../../storage/db';
 import type { App } from '../app';
-import { botNames, DEFAULT_COACH, type CoachConfig, type GameConfig, type PlayerConfig } from '../config';
+import { pickChallenge } from '../../coach/challenges';
+import { loadHistory } from '../../storage/history';
+import { botNames, DEFAULT_COACH, DEFAULT_TRAINING, type CoachConfig, type GameConfig, type PlayerConfig, type TrainingConfig } from '../config';
 import { h } from '../dom';
-import type { SavedGame } from '../session';
+import { emptyTrainingLog, type SavedGame } from '../session';
 import { screen, segmented, toggle } from './common';
 
 export const LEVEL_NAMES = ['', 'Aprendiz', 'Novato', 'Aficionado', 'Jugador', 'Competente', 'Astuto', 'Táctico', 'Experto', 'Maestro', 'Gran maestro'];
@@ -13,9 +15,10 @@ interface SetupPrefs {
   levels: number[];
   starter: 'me' | 'random' | 'bot';
   coach: CoachConfig;
+  training: TrainingConfig;
 }
 
-const DEFAULT_PREFS: SetupPrefs = { bots: 1, levels: [4, 5, 6], starter: 'me', coach: DEFAULT_COACH };
+const DEFAULT_PREFS: SetupPrefs = { bots: 1, levels: [4, 5, 6], starter: 'me', coach: DEFAULT_COACH, training: DEFAULT_TRAINING };
 
 export function createGame(prefs: SetupPrefs): SavedGame {
   const names = botNames(prefs.bots);
@@ -26,7 +29,7 @@ export function createGame(prefs: SetupPrefs): SavedGame {
   const n = players.length;
   const starter = prefs.starter === 'me' ? 0 : prefs.starter === 'bot' ? 1 : Math.floor(Math.random() * n);
   const seed = randomSeed();
-  const config: GameConfig = { players, starter, coach: prefs.coach, seed };
+  const config: GameConfig = { players, starter, coach: prefs.coach, seed, training: prefs.training };
   return {
     version: 1,
     id: `${Date.now()}-${seed >>> 0}`,
@@ -37,6 +40,7 @@ export function createGame(prefs: SetupPrefs): SavedGame {
     rounds: [],
     moves: [],
     startedAt: Date.now(),
+    training: emptyTrainingLog(),
   };
 }
 
@@ -74,6 +78,22 @@ export function setupScreen(root: HTMLElement, app: App): void {
       sub);
   }
 
+  const trainBox = h('div', { class: 'coach-opts' });
+  function renderTraining(): void {
+    const t = prefs.training;
+    const needCoach = h('p', { class: 'muted small' }, 'Predecir y la segunda oportunidad necesitan el modo entrenador.');
+    trainBox.replaceChildren(
+      toggle('Reto de la partida 🎯', t.challenge, (v) => (t.challenge = v), 'Un objetivo concreto sacado de tus partidas anteriores'),
+      toggle('Predice antes de mirar', t.predict, (v) => (t.predict = v), 'Con 💡, primero eliges tu jugada y luego la comparas'),
+      toggle('Segunda oportunidad', t.secondChance, (v) => (t.secondChance = v), 'Tras un fallo, reintenta antes de ver la solución'),
+      toggle('Explicar las jugadas de los bots', t.explainBots, (v) => (t.explainBots = v), 'Por qué juega lo que juega un bot de nivel 6 o más'),
+      toggle('¿Qué hará el rival?', t.guessRival, (v) => (t.guessRival = v), 'A veces te pregunta qué cogerá un bot antes de que juegue'),
+      toggle('Preguntas de conteo', t.counting, (v) => (t.counting = v), 'De vez en cuando: ¿cuántas de un color faltan por salir?'),
+      toggle('Contador de losetas por salir', t.bagCounter, (v) => (t.bagCounter = v), 'Muestra cuántas de cada color quedan en bolsa y caja'),
+      toggle('Modo sin ayudas', t.noAids, (v) => (t.noAids = v), 'Sin avisos de suelo, vista previa ni pistas. Cuenta aparte'),
+      needCoach);
+  }
+
   const botsSeg = h('div', {});
   function renderBotsSeg(): void {
     botsSeg.replaceChildren(segmented([1, 2, 3].map((v) => ({ value: v, label: `${v} bot${v > 1 ? 's' : ''}` })), prefs.bots, (v) => {
@@ -92,6 +112,7 @@ export function setupScreen(root: HTMLElement, app: App): void {
   start.addEventListener('click', async () => {
     await kvSet('setupPrefs', prefs);
     const game = createGame(prefs);
+    if (prefs.training.challenge) game.challenge = pickChallenge(await loadHistory(), prefs.coach.enabled && !prefs.training.noAids);
     await kvSet('current', game);
     app.go('game');
   });
@@ -100,6 +121,7 @@ export function setupScreen(root: HTMLElement, app: App): void {
     h('section', { class: 'card' }, h('h2', {}, 'Rivales'), botsSeg, botsBox),
     h('section', { class: 'card' }, h('h2', {}, '¿Quién empieza?'), starterSeg),
     h('section', { class: 'card' }, h('h2', {}, 'Entrenador'), coachBox),
+    h('section', { class: 'card' }, h('h2', {}, 'Entrenamiento'), trainBox),
     start));
 
   const render = () => {
@@ -107,11 +129,12 @@ export function setupScreen(root: HTMLElement, app: App): void {
     renderBots();
     renderStarter();
     renderCoach();
+    renderTraining();
   };
   render();
   void kvGet<SetupPrefs>('setupPrefs').then((saved) => {
     if (!saved) return;
-    Object.assign(prefs, { ...DEFAULT_PREFS, ...saved, coach: { ...DEFAULT_COACH, ...saved.coach } });
+    Object.assign(prefs, { ...DEFAULT_PREFS, ...saved, coach: { ...DEFAULT_COACH, ...saved.coach }, training: { ...DEFAULT_TRAINING, ...(saved.training ?? {}) } });
     render();
   });
 }

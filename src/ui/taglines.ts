@@ -25,7 +25,6 @@ export const TAGLINES = [
 /** Índice aleatorio distinto del anterior. */
 export function nextTagline(prev: number, rnd: () => number = Math.random): number {
   if (TAGLINES.length < 2) return 0;
-  let i = prev;
-  while (i === prev) i = Math.floor(rnd() * TAGLINES.length);
-  return i;
+  const i = Math.floor(rnd() * (TAGLINES.length - 1));
+  return prev >= 0 && i >= prev ? i + 1 : i;
 }

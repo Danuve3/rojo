@@ -14,7 +14,7 @@ import { h, wait } from './dom';
 import { computeSizes } from './layout';
 import { floorSlot, lineSlot, modelFromState, type SlotModel, zoneOf, wallSlot } from './model';
 import { buildTable, type TableView } from './table';
-import { COLOR_NAMES_PLURAL } from './tileArt';
+import { COLOR_NAMES_PLURAL, tileSvg } from './tileArt';
 import { type Motion, type SlotRect, TileLayer } from './tileLayer';
 
 export type SoundName =
@@ -23,6 +23,10 @@ export type SoundName =
 
 export interface ViewEvents {
   onMove(m: Move): void;
+  /** Modo predecir: jugada candidata elegida (no se juega). */
+  onPredict(m: Move): void;
+  /** Modo adivinar: el jugador señala qué cree que cogerá el rival. */
+  onGuess(g: { source: Source; color: number }): void;
   onSkip(): void;
   onHint(): void;
   onUndo(): void;
@@ -70,10 +74,20 @@ export class GameView {
   private scoreShown: number[] = [];
   private tokenAtCenter = false;
   private pending: Target | null = null;
+  private mode: 'play' | 'predict' | 'guess' = 'play';
+  private notices: Array<{ el: HTMLElement; near: HTMLElement }> = [];
+  private readonly noAids: boolean;
+  private challengeEl: HTMLSpanElement;
+  private bagCounterEl: HTMLDivElement;
+  private askEl: HTMLDivElement;
   private offSettings: () => void = () => undefined;
 
   constructor(private config: GameConfig, private ev: ViewEvents) {
     const n = config.players.length;
+    this.noAids = config.training?.noAids ?? false;
+    this.challengeEl = h('span', { class: 'challenge', hidden: true, role: 'status' });
+    this.bagCounterEl = h('div', { class: 'bag-counter', hidden: true, 'aria-label': 'Losetas por salir de cada color' });
+    this.askEl = h('div', { class: 'ask-panel', hidden: true, role: 'dialog' });
     this.table = buildTable(n * 2 + 1);
     this.layer = new TileLayer({
       resolve: (slot, model) => this.resolve(slot, model),
@@ -116,15 +130,18 @@ export class GameView {
     exit.addEventListener('click', () => ev.onExit());
     const me = h('section', { class: 'me' }, this.boards[HUMAN].el);
     this.el = h('div', { class: 'screen game' },
-      h('header', { class: 'g-top' }, exit, this.roundLabel, h('span', { class: 'spacer' }), mute),
+      h('header', { class: 'g-top' }, exit, this.roundLabel, this.challengeEl, h('span', { class: 'spacer' }), mute),
       this.rivalsEl,
       h('section', { class: 'table-wrap' }, this.table.el),
       me,
       this.coachBar,
       this.hintPanel,
       this.verdictEl,
+      this.askEl,
       this.layer.root,
       this.fx);
+    this.table.el.append(this.bagCounterEl);
+    this.challengeEl.addEventListener('click', () => this.say(this.challengeEl.title, HUMAN));
     this.hintBtn.addEventListener('click', () => ev.onHint());
     this.undoBtn.addEventListener('click', () => ev.onUndo());
     this.verdictEl.addEventListener('click', () => this.hideVerdict());
@@ -268,23 +285,32 @@ export class GameView {
   }
 
   /** Aviso destacado junto al tablero de un jugador. */
-  private notice(text: string, near: HTMLElement): void {
-    const el = h('div', { class: 'end-notice', role: 'status' }, '🏁 ', text);
+  private notice(text: string, near: HTMLElement, kind = ''): void {
+    const el = h('div', { class: kind ? `end-notice ${kind}` : 'end-notice', role: 'status' }, kind ? '' : '🏁 ', text);
     const o = this.originRect();
     const r = near.getBoundingClientRect();
-    const below = r.top - o.top < o.height / 2;
-    el.style.top = `${below ? r.bottom - o.top + 6 : r.top - o.top - 6}px`;
+    // Los avisos de un mismo sitio se apilan en lugar de superponerse.
+    this.notices = this.notices.filter((n) => n.el.isConnected);
+    const stacked = this.notices.filter((n) => n.near === near).reduce((acc, n) => acc + n.el.offsetHeight + 6, 0);
+    let below = true;
+    if (near === this.table.el) {
+      // Sobre la mesa: dentro de ella, para no tapar el tablero propio.
+      el.style.top = `${r.top - o.top + 34 + stacked}px`;
+    } else {
+      below = r.top - o.top < o.height / 2;
+      el.style.top = `${below ? r.bottom - o.top + 6 + stacked : r.top - o.top - 6 - stacked}px`;
+    }
     el.classList.add(below ? 'below' : 'above');
     this.fx.append(el);
+    this.notices.push({ el, near });
     const ts = this.timeScale();
     const a = el.animate([
-      { opacity: 0, transform: `translateY(${below ? -8 : 8}px)` },
+      { opacity: 0, transform: `translateY(${el.classList.contains('below') ? -8 : 8}px)` },
       { opacity: 1, transform: 'translateY(0)', offset: 0.08 },
       { opacity: 1, transform: 'translateY(0)', offset: 0.9 },
       { opacity: 0, transform: 'translateY(0)' },
     ], { duration: Math.max(2600, 4200 * Math.max(ts, 0.6)), easing: 'ease-out' });
     a.finished.finally(() => el.remove());
-    el.addEventListener('click', () => a.finish());
   }
 
   private updateChrome(s: GameState): void {
@@ -292,6 +318,7 @@ export class GameView {
     this.table.bagCount.textContent = String(sum(s.bag));
     this.table.boxCount.textContent = String(sum(s.box));
     this.boards.forEach((b, i) => b.setActive(s.phase === 'playing' && s.current === i));
+    this.setBagCounter(this.config.training?.bagCounter && !this.noAids ? s.bag.map((b, c) => b + s.box[c]) : null);
   }
 
   sync(s: GameState): void {
@@ -577,7 +604,7 @@ export class GameView {
         this.ev.onSkip();
         this.layer.finishAll();
       }
-      if (t.closest('button, .hint-panel, .verdict')) return;
+      if (t.closest('button, .hint-panel, .verdict, .ask-panel, .challenge')) return;
       const rival = t.closest<HTMLElement>('.board.compact');
       if (rival && !this.selection) {
         this.expandRival(Number(rival.dataset.player));
@@ -597,7 +624,7 @@ export class GameView {
         return;
       }
       // Toque cerca de una loseta de la mesa: área táctil ampliada.
-      const near = this.inputOn ? this.nearestTableTile(e.clientX, e.clientY) : null;
+      const near = this.inputOn || this.mode === 'guess' ? this.nearestTableTile(e.clientX, e.clientY) : null;
       if (near) {
         this.onTileTap(near.slot, near.color);
         return;
@@ -645,6 +672,14 @@ export class GameView {
   }
 
   private onTileTap(slot: string, color: number): void {
+    if (this.mode === 'guess') {
+      const src = this.sourceOf(slot);
+      if (src === null || color === FIRST_TOKEN) return;
+      this.ev.sound('pick');
+      for (const sl of this.sourceTiles(src, color)) this.layer.tileAt(sl)?.inner.classList.add('guessed');
+      this.ev.onGuess({ source: src, color });
+      return;
+    }
     if (!this.inputOn || !this.state) return;
     const source = this.sourceOf(slot);
     if (source === null || color === FIRST_TOKEN) return;
@@ -687,6 +722,12 @@ export class GameView {
     const valid = new Set(validTargets(p, sel.color));
     const board = this.boards[HUMAN];
     board.el.classList.add('choosing');
+    if (this.noAids) {
+      board.el.classList.add('no-aids');
+      const count = sel.source === 'center' ? s.center[sel.color] : s.factories[sel.source][sel.color];
+      this.setStatus(this.mode === 'predict' ? `¿Dónde pondrías ${count} ${COLOR_NAMES_PLURAL[sel.color]}?` : `${count} ${COLOR_NAMES_PLURAL[sel.color]}: elige línea o suelo`);
+      return;
+    }
     board.lines.forEach((line, row) => {
       const ok = valid.has(row as Target);
       line.classList.toggle('valid', ok);
@@ -704,7 +745,9 @@ export class GameView {
     });
     board.floor.classList.add('valid');
     const count = sel.source === 'center' ? s.center[sel.color] : s.factories[sel.source][sel.color];
-    this.setStatus(`${count} ${COLOR_NAMES_PLURAL[sel.color]}: elige línea o suelo`);
+    this.setStatus(this.mode === 'predict'
+      ? `Tu candidata: ${count} ${COLOR_NAMES_PLURAL[sel.color]}. ¿A qué línea? (no se juega)`
+      : `${count} ${COLOR_NAMES_PLURAL[sel.color]}: elige línea o suelo`);
   }
 
   private clearPreview(): void {
@@ -740,7 +783,7 @@ export class GameView {
     this.selection = null;
     for (const t of this.layer.tiles()) t.inner.classList.remove('lifted', 'dim');
     const board = this.boards[HUMAN];
-    board.el.classList.remove('choosing');
+    board.el.classList.remove('choosing', 'no-aids');
     board.lines.forEach((l, i) => {
       l.classList.remove('valid', 'invalid', 'spill');
       board.badges[i].textContent = '';
@@ -756,8 +799,15 @@ export class GameView {
       this.ev.sound('cancel');
       return;
     }
+    if (this.mode === 'predict') {
+      const candidate: Move = { source: sel.source, color: sel.color as Move['color'], target };
+      this.clearSelection();
+      this.mode = 'play';
+      this.ev.onPredict(candidate);
+      return;
+    }
     const cost = this.floorCost(s, sel, target);
-    if (cost.slots > 0 && this.pending !== target) {
+    if (cost.slots > 0 && this.pending !== target && !this.noAids) {
       this.showPreview(s, sel, target);
       return;
     }
@@ -767,10 +817,137 @@ export class GameView {
     this.ev.onMove(move);
   }
 
+  // ---------- ayudas de entrenamiento ----------
+
+  /** Modo predecir: el jugador elige una candidata que no se juega. */
+  startPredict(): void {
+    this.clearSelection();
+    this.hideCoach();
+    this.mode = 'predict';
+    this.coachBar.classList.add('predicting');
+    this.setStatus('¿Qué jugarías? Elige color y línea: no se juega');
+  }
+
+  endPredict(): void {
+    if (this.mode === 'predict') this.mode = 'play';
+    this.coachBar.classList.remove('predicting');
+  }
+
+  get predicting(): boolean {
+    return this.mode === 'predict';
+  }
+
+  /** Pregunta qué cogerá un rival: la mesa se vuelve tocable. Devuelve una función para cerrar. */
+  startGuess(name: string, onSkip: () => void): void {
+    this.mode = 'guess';
+    this.layer.root.classList.add('interactive');
+    const skip = h('button', { class: 'btn small-btn' }, 'Saltar');
+    skip.addEventListener('click', () => onSkip());
+    this.askEl.replaceChildren(h('p', {}, h('b', {}, `¿Qué cogerá ${name}?`), ' Toca el color y el sitio de donde crees que lo cogerá.'), skip);
+    this.askEl.hidden = false;
+    this.setStatus(`¿Qué cogerá ${name}?`);
+  }
+
+  endGuess(): void {
+    this.mode = 'play';
+    this.askEl.hidden = true;
+    if (!this.inputOn) this.layer.root.classList.remove('interactive');
+    for (const t of this.layer.tiles()) t.inner.classList.remove('guessed');
+  }
+
+  /** Mensaje breve junto a un tablero o a la mesa. */
+  say(text: string, near: 'table' | number, tone: 'good' | 'bad' | 'info' = 'info'): void {
+    const el = near === 'table' ? this.table.el : this.boards[near].el;
+    this.notice(text, el, `say ${tone}`);
+  }
+
+  /** Reto activo en la cabecera. */
+  setChallenge(title: string | null, short = '', status: 'ok' | 'risk' | 'fail' | 'pending' = 'pending'): void {
+    if (!title) {
+      this.challengeEl.hidden = true;
+      return;
+    }
+    this.challengeEl.hidden = false;
+    this.challengeEl.className = `challenge ${status}`;
+    this.challengeEl.textContent = `🎯 ${short}`;
+    this.challengeEl.title = `Reto: ${title}`;
+    this.challengeEl.setAttribute('aria-label', `Reto: ${title}. ${short}`);
+  }
+
+  /** Contador de losetas por salir (bolsa + caja) de cada color. */
+  setBagCounter(counts: number[] | null): void {
+    if (!counts) {
+      this.bagCounterEl.hidden = true;
+      return;
+    }
+    this.bagCounterEl.hidden = false;
+    this.bagCounterEl.replaceChildren(...counts.map((n, c) =>
+      h('span', { class: 'bc-item', title: `${n} ${COLOR_NAMES_PLURAL[c]} por salir` }, tileSvg(c, 14), h('b', {}, String(n)))));
+  }
+
+  /** Pregunta de opción múltiple. Resuelve con la opción elegida o null si se salta. */
+  ask(question: string, options: number[]): Promise<number | null> {
+    return new Promise((resolve) => {
+      const done = (v: number | null) => {
+        this.askEl.hidden = true;
+        resolve(v);
+      };
+      const skip = h('button', { class: 'btn small-btn ghost' }, 'Saltar');
+      skip.addEventListener('click', () => done(null));
+      const opts = h('div', { class: 'ask-opts' }, ...options.map((o) => {
+        const b = h('button', { class: 'btn small-btn' }, String(o));
+        b.addEventListener('click', () => done(o));
+        return b;
+      }));
+      this.askEl.replaceChildren(h('p', {}, h('b', {}, question)), opts, skip);
+      this.askEl.hidden = false;
+    });
+  }
+
+  /** Explicación breve de la jugada de un bot, junto a su tablero. */
+  botNote(player: number, text: string): void {
+    this.notice(text, this.boards[player].el, 'bot-note');
+  }
+
+  /** Segunda oportunidad: valoración sin solución, con «Reintentar» o «Seguir». */
+  showRetry(v: Verdict, before: GameState): Promise<'retry' | 'continue'> {
+    this.hintPanel.hidden = true;
+    window.clearTimeout(this.verdictTimer);
+    const src = (m: Move) => (m.source === 'center' ? before.center : before.factories[m.source])[m.color];
+    return new Promise((resolve) => {
+      const retry = h('button', { class: 'btn small-btn primary' }, 'Reintentar');
+      const go = h('button', { class: 'btn small-btn ghost' }, 'Seguir');
+      const reveal = h('button', { class: 'btn small-btn ghost' }, 'Ver solución');
+      const solution = h('div', { class: 'v-solution', hidden: true },
+        v.reasons.length ? h('ul', {}, ...v.reasons.map((r) => h('li', {}, r))) : null,
+        h('div', { class: 'v-best small' }, 'Mejor: ', describeMove(v.best.move, src(v.best.move))));
+      const finish = (r: 'retry' | 'continue') => {
+        this.hideVerdict();
+        resolve(r);
+      };
+      retry.addEventListener('click', (e) => { e.stopPropagation(); finish('retry'); });
+      go.addEventListener('click', (e) => { e.stopPropagation(); finish('continue'); });
+      reveal.addEventListener('click', (e) => {
+        e.stopPropagation();
+        solution.hidden = false;
+        reveal.remove();
+      });
+      this.verdictEl.className = `verdict ${v.label} sticky`;
+      this.verdictEl.replaceChildren(
+        h('div', { class: 'v-title' }, h('span', { class: 'v-icon' }, LABEL_ICON[v.label]), LABEL_TEXT[v.label],
+          h('span', { class: 'v-loss' }, `pierdes ~${v.loss.toFixed(1).replace('.', ',')}`)),
+        h('p', { class: 'small' }, 'Hay una jugada mejor. ¿La buscas?'),
+        solution,
+        h('div', { class: 'v-actions' }, retry, reveal, go));
+      void this.verdictEl.offsetWidth;
+      this.verdictEl.classList.add('show');
+    });
+  }
+
   // ---------- pistas ----------
 
   /** Pistas: resalta las 3 mejores jugadas en el tablero y las explica. */
-  showHints(moves: MoveAnalysis[], names: string[], st: GameState): void {
+  showHints(moves: MoveAnalysis[], names: string[], st: GameState, predicted?: { text: string; good: boolean }): void {
     this.hideVerdict();
     this.clearSelection();
     this.clearHints();
@@ -799,7 +976,9 @@ export class GameView {
     }));
     const close = h('button', { class: 'icon-btn sm close', 'aria-label': 'Cerrar pistas' }, '×');
     close.addEventListener('click', () => this.clearHints());
-    this.hintPanel.replaceChildren(h('div', { class: 'hp-head' }, h('strong', {}, '💡 Mejores jugadas'), close), list);
+    const head = h('div', { class: 'hp-head' }, h('strong', {}, '💡 Mejores jugadas'), close);
+    if (predicted) this.hintPanel.replaceChildren(head, h('p', { class: `hp-predict ${predicted.good ? 'good' : 'bad'}` }, predicted.text), list);
+    else this.hintPanel.replaceChildren(head, list);
     this.hintPanel.hidden = false;
   }
 

@@ -6,6 +6,7 @@ import { h } from '../dom';
 import type { SavedGame } from '../session';
 import { screen } from './common';
 import { reviewSection } from '../review';
+import { trainingCard } from '../trainingSummary';
 
 export function endScreen(root: HTMLElement, app: App): void {
   void kvGet<SavedGame>('lastFinished').then((g) => {
@@ -28,6 +29,7 @@ export function endScreen(root: HTMLElement, app: App): void {
             h('span', {}, cfg.name, cfg.kind === 'bot' ? h('small', {}, ` nv ${cfg.level}`) : null),
             h('b', {}, `${p.score}`));
         }))),
+      trainingCard(g),
       g.config.coach.enabled && g.config.coach.review ? reviewSection(g) : null,
       h('div', { class: 'row-btns' }, home, again)));
   });

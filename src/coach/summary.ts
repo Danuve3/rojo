@@ -3,6 +3,7 @@ import type { HistoryEntry } from '../storage/history';
 import { HUMAN } from '../ui/config';
 import type { SavedGame } from '../ui/session';
 import type { ErrorTag, VerdictLabel } from './types';
+import { challengeProgress } from './challenges';
 import { type GameStats, replayStats } from './stats';
 import { moveAccuracy } from './verdict';
 
@@ -59,5 +60,10 @@ export function summarize(g: SavedGame): HistoryEntry {
     rounds: s.round,
     stats: safeStats(g),
     rivalAvg: s.players.filter((_, i) => i !== HUMAN).reduce((a, p) => a + p.score, 0) / (s.numPlayers - 1),
+    training: {
+      challenge: g.challenge ? { id: g.challenge.id, title: g.challenge.title, done: challengeProgress(g.challenge, g).status === 'ok' } : undefined,
+      noAids: g.config.training?.noAids ?? false,
+      ...(g.training ?? {}),
+    },
   };
 }

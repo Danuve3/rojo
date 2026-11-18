@@ -1,7 +1,11 @@
 import type { HistoryEntry } from '../storage/history';
 import type { GameStats } from './stats';
 
+export type ImprovementId =
+  | 'floor' | 'bonus' | 'ppt' | 'stuck' | 'token' | 'endgame' | 'badEnd' | 'gifts' | 'blocked' | 'points' | 'up' | 'down';
+
 export interface Improvement {
+  id: ImprovementId;
   /** Encargo corto en imperativo. */
   title: string;
   /** Diagnóstico con tus cifras. */
@@ -29,6 +33,7 @@ function fromStats(entries: HistoryEntry[]): Improvement[] {
   const tiles = mean(st.map((s) => s.tilesToFloor));
   if (floor > 10) {
     out.push({
+      id: 'floor',
       title: 'Deja de alimentar el suelo',
       why: `Pierdes ${f1(floor)} puntos por partida en el suelo (${f1(tiles)} losetas).`,
       todo: 'En la próxima partida, antes de confirmar cada jugada, fíjate en el aviso «⬇N» de la línea: si va a caer más de 1 loseta, busca otra opción. Reto: terminar con menos de 8 puntos de suelo.',
@@ -41,6 +46,7 @@ function fromStats(entries: HistoryEntry[]): Improvement[] {
   const colors = mean(st.map((s) => s.colorsDone));
   if (bonus < 10) {
     out.push({
+      id: 'bonus',
       title: 'Juega a por los bonus',
       why: `Sacas ${f1(bonus)} puntos de bonus por partida (${f1(cols)} columnas y ${f1(colors)} colores completos de media).`,
       todo: 'En la próxima partida, elige en la ronda 2 la columna central de tu muro y no la abandones: cada ronda mete una loseta en ella. Reto: cerrar al menos una columna (+7).',
@@ -52,6 +58,7 @@ function fromStats(entries: HistoryEntry[]): Improvement[] {
   const ppt = placed ? st.reduce((a, s) => a + s.placementPoints, 0) / placed : 0;
   if (placed && ppt < 3.3) {
     out.push({
+      id: 'ppt',
       title: 'Coloca pegado a lo que ya tienes',
       why: `Cada loseta te da ${f1(ppt)} puntos al colocarse; los buenos jugadores pasan de 3,5. Tu muro está demasiado suelto.`,
       todo: 'En la próxima partida, empieza por la casilla central (fila 3, columna 3) y crece en cruz. Antes de elegir línea, mira en qué casilla del muro caerá la loseta y prefiere las que tocan otras.',
@@ -62,6 +69,7 @@ function fromStats(entries: HistoryEntry[]): Improvement[] {
   const stuck = mean(st.map((s) => s.stuckTiles));
   if (stuck > 3.5) {
     out.push({
+      id: 'stuck',
       title: 'No empieces líneas que no vas a cerrar',
       why: `Acabas las partidas con ${f1(stuck)} losetas atascadas en líneas incompletas.`,
       todo: 'En la última ronda, antes de abrir una línea de 4 o 5, cuenta cuántas losetas de ese color quedan en la mesa. Si no llegan, mejor una línea corta o rematar una que ya tengas empezada.',
@@ -75,6 +83,7 @@ function fromStats(entries: HistoryEntry[]): Improvement[] {
   const expected = mean(entries.map((e) => 1 / e.players));
   if (tokenRate > Math.min(0.8, expected * 1.5)) {
     out.push({
+      id: 'token',
       title: 'Suelta la ficha inicial',
       why: `Te llevas la ficha «1» en el ${pct(tokenRate)} de las rondas, y cada vez te cuesta 1 o 2 puntos de suelo.`,
       todo: 'En la próxima partida, no seas el primero en coger del centro salvo que ese montón te complete una línea. Fíjate en quién tiene prisa por cogerla y deja que pague él.',
@@ -88,7 +97,8 @@ function fromStats(entries: HistoryEntry[]): Improvement[] {
     const b = mean(last.map((s) => s.lossEarlier as number));
     if (a > 1 && a > b * 1.4) {
       out.push({
-        title: 'Aprende a cerrar partidas',
+        id: 'endgame',
+      title: 'Aprende a cerrar partidas',
         why: `En la última ronda tu juego se hunde: pierdes ${f1(a)} puntos por jugada, frente a ${f1(b)} en el resto.`,
         todo: 'Cuando alguien tenga una fila a punto de completarse, para un momento: cuenta qué queda en la mesa, quién se tragará las sobras y prioriza cerrar columnas y colores antes que abrir líneas nuevas. Usa 💡 en esa ronda.',
         cost: (a - b) * 4,
@@ -99,6 +109,7 @@ function fromStats(entries: HistoryEntry[]): Improvement[] {
   const badEnds = st.filter((s) => s.endedGame && !s.aheadAtEnd).length;
   if (badEnds >= 2 && badEnds / st.length >= 0.3) {
     out.push({
+      id: 'badEnd',
       title: 'No cierres la partida cuando vas perdiendo',
       why: `En ${badEnds} de ${st.length} partidas completaste la fila que terminó el juego yendo por detrás.`,
       todo: 'En la próxima partida, antes de poner la quinta loseta de una fila, mira el marcador. Si vas perdiendo, déjala para más tarde y alarga la partida para recortar distancia.',
@@ -116,6 +127,7 @@ function fromTags(games: HistoryEntry[]): Improvement[] {
   const gifts = per('regalo_rival');
   if (gifts >= 0.8) {
     out.push({
+      id: 'gifts',
       title: 'Mira el tablero de tus rivales antes de coger',
       why: `Les regalas jugadas ${f1(gifts)} veces por partida.`,
       todo: 'En la próxima partida, antes de coger de un expositor, fíjate en qué cae al centro y en si completa la línea de alguien. Toca su tablero para verlo en grande.',
@@ -125,6 +137,7 @@ function fromTags(games: HistoryEntry[]): Improvement[] {
   const blocked = per('linea_bloqueada');
   if (blocked >= 0.8) {
     out.push({
+      id: 'blocked',
       title: 'Cuenta las losetas que quedan',
       why: `${f1(blocked)} veces por partida dejas líneas sin opciones reales de completarse.`,
       todo: 'Antes de empezar una línea, cuenta cuántas losetas de ese color quedan en los expositores y en el centro. Si no hay suficientes para cerrarla esta ronda o la siguiente, no la empieces.',
@@ -134,6 +147,7 @@ function fromTags(games: HistoryEntry[]): Improvement[] {
   const pts = per('puntos_perdidos');
   if (pts >= 1) {
     out.push({
+      id: 'points',
       title: 'No dejes pasar las jugadas que puntúan',
       why: `${f1(pts)} veces por partida eliges una jugada que da menos puntos que otra igual de segura.`,
       todo: 'En la próxima partida, pide una pista 💡 en cada ronda y compárala con lo que ibas a hacer. Intenta adivinar la mejor jugada antes de mirarla.',
@@ -157,6 +171,7 @@ function difficulty(games: HistoryEntry[]): Improvement[] {
   const [level, e] = [...byLevel.entries()].sort((a, b) => b[1].n - a[1].n)[0];
   if (e.n >= 4 && e.w / e.n >= 0.75 && level < 10) {
     return [{
+      id: 'up',
       title: 'Sube la dificultad',
       why: `Ganas el ${pct(e.w / e.n)} de las veces al nivel ${level}: ahí ya no aprendes nada.`,
       todo: `En la próxima partida, pon al rival en el nivel ${level + 1}.`,
@@ -165,6 +180,7 @@ function difficulty(games: HistoryEntry[]): Improvement[] {
   }
   if (e.n >= 4 && e.w / e.n <= 0.15 && level > 1) {
     return [{
+      id: 'down',
       title: 'Baja un nivel y consolida',
       why: `Contra el nivel ${level} solo ganas el ${pct(e.w / e.n)}.`,
       todo: `En las próximas partidas, juega contra el nivel ${level - 1} con el entrenador activado hasta ganar la mitad, y luego vuelve al ${level}.`,

@@ -20,6 +20,15 @@ export interface HistoryEntry {
   stats?: GameStats;
   /** Puntuación media de los rivales. */
   rivalAvg?: number;
+  /** Ayudas de entrenamiento (v1.2+). */
+  training?: {
+    challenge?: { id: string; title: string; done: boolean };
+    noAids?: boolean;
+    predictions?: { n: number; hits: number };
+    guesses?: { n: number; exact: number; color: number };
+    counts?: { n: number; correct: number };
+    retries?: number;
+  };
 }
 
 export function saveHistory(e: HistoryEntry): Promise<void> {

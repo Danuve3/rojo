@@ -12,11 +12,48 @@ export interface CoachConfig {
   review: boolean;
 }
 
+/** Ayudas de entrenamiento dentro de la partida. */
+export interface TrainingConfig {
+  /** Reto activo sacado de «Para tus próximas partidas». */
+  challenge: boolean;
+  /** Con 💡, elegir primero tu jugada candidata. */
+  predict: boolean;
+  /** Tras un fallo, reintentar antes de ver la solución. */
+  secondChance: boolean;
+  /** Explicar las jugadas de los bots fuertes. */
+  explainBots: boolean;
+  /** Preguntar a veces qué cogerá el rival. */
+  guessRival: boolean;
+  /** Preguntas de conteo de losetas. */
+  counting: boolean;
+  /** Mostrar cuántas losetas de cada color faltan por salir. */
+  bagCounter: boolean;
+  /** Sin avisos de suelo ni vista previa. */
+  noAids: boolean;
+}
+
+export const DEFAULT_TRAINING: TrainingConfig = {
+  challenge: true,
+  predict: true,
+  secondChance: true,
+  explainBots: true,
+  guessRival: false,
+  counting: false,
+  bagCounter: false,
+  noAids: false,
+};
+
 export interface GameConfig {
   players: PlayerConfig[];
   starter: number;
   coach: CoachConfig;
   seed: number;
+  /** Ausente en partidas guardadas antes de la v1.2. */
+  training?: TrainingConfig;
+}
+
+export function trainingOf(c: GameConfig): TrainingConfig {
+  return { ...DEFAULT_TRAINING, ...(c.training ?? {}) };
 }
 
 export const HUMAN = 0;

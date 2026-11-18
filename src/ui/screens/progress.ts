@@ -7,6 +7,7 @@ import type { App } from '../app';
 import { barList, lineChart } from '../charts';
 import { h } from '../dom';
 import { screen } from './common';
+import { trainingProgress } from '../trainingSummary';
 import { LEVEL_NAMES } from './setup';
 
 function evaluationCard(games: HistoryEntry[]): HTMLElement | null {
@@ -102,6 +103,7 @@ export function progressScreen(root: HTMLElement, app: App): void {
         stat('victorias', `${Math.round((100 * wins) / games.length)}%`),
         stat('puntos de media', avg.toFixed(0)),
         stat('precisión (últimas 10)', acc === null ? '—' : `${Math.round(acc)}%`)),
+      trainingProgress(games),
       h('section', { class: 'card' }, h('h2', {}, 'Precisión'), accuracySection(games)),
       h('section', { class: 'card' }, h('h2', {}, 'Victorias por nivel de rival'), h('p', { class: 'muted small' }, 'Partidas en las que acabaste por delante de un rival de ese nivel.'), levelSection(games)),
       h('section', { class: 'card' }, h('h2', {}, 'Errores recurrentes'), errorsSection(games)),

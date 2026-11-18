@@ -511,6 +511,52 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .end-notice {
   position: absolute; left: 12px; right: 12px; max-width: 520px; margin: 0 auto; z-index: 2;
   background: #e3a93a; color: #3a2500; font-weight: 700; font-size: 0.92rem; line-height: 1.35;
-  padding: 10px 14px; border-radius: 12px; box-shadow: var(--float-shadow); pointer-events: auto; text-align: center;
+  padding: 10px 14px; border-radius: 12px; box-shadow: var(--float-shadow); pointer-events: none; text-align: center;
 }
 .end-notice.above { transform-origin: bottom; translate: 0 -100%; }
+
+/* ---------- ayudas de entrenamiento ---------- */
+.challenge {
+  font-size: 0.78rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--slot);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 46vw; cursor: pointer;
+  border: 1px solid transparent; font-variant-numeric: tabular-nums;
+}
+.challenge.ok { background: rgba(47, 143, 91, 0.16); color: var(--chip-excelente); }
+.challenge.risk { background: rgba(201, 138, 18, 0.18); color: var(--chip-imprecision); }
+.challenge.fail { background: rgba(200, 64, 46, 0.15); color: var(--chip-pifia); }
+.bag-counter {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 1;
+  background: var(--card); border-radius: 999px; padding: 3px 8px; box-shadow: var(--shadow); font-size: 0.75rem;
+}
+.bc-item { display: inline-flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }
+.bc-item .tile-svg { display: block; }
+.ask-panel {
+  position: absolute; left: 12px; right: 12px; top: 46%; transform: translateY(-50%); z-index: 26; max-width: 460px; margin: 0 auto;
+  background: var(--card); border-radius: 16px; box-shadow: var(--float-shadow); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px; align-items: stretch; text-align: center;
+}
+.ask-panel p { margin: 0; line-height: 1.4; }
+.ask-opts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.small-btn { min-height: 44px; padding: 0 14px; font-size: 0.95rem; }
+.btn.ghost { background: transparent; box-shadow: none; }
+.end-notice.say, .end-notice.bot-note { background: var(--card); color: var(--ink); font-weight: 600; text-align: left; border-left: 5px solid var(--muted); }
+.end-notice.say.good { border-left-color: var(--green); }
+.end-notice.say.bad { border-left-color: var(--red); }
+.end-notice.say.info { border-left-color: var(--accent); }
+.end-notice.bot-note { font-size: 0.85rem; font-weight: 500; border-left-color: var(--accent); }
+.tile-inner.guessed { box-shadow: 0 0 0 4px var(--accent), var(--tile-shadow); }
+.hp-predict { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; }
+.hp-predict.good { background: rgba(47, 143, 91, 0.14); color: var(--chip-excelente); }
+.hp-predict.bad { background: rgba(201, 138, 18, 0.16); color: var(--chip-imprecision); }
+.coachbar.predicting .cbtn.hint { background: #e3a93a; border-color: #e3a93a; }
+.verdict .v-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.verdict .v-actions .btn { flex: 1; }
+.verdict.sticky p { margin: 4px 0 0; }
+.v-solution ul { margin: 6px 0 0; padding-left: 1.1em; font-size: 0.9rem; }
+.training .tr-row { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; padding: 8px 0; border-top: 1px solid var(--edge); }
+.training .tr-row:first-of-type { border-top: 0; }
+.training .tr-row b { font-variant-numeric: tabular-nums; color: var(--accent); }
+.training .tr-row .muted { grid-column: 1 / -1; }
+.tr-challenge { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; margin-bottom: 6px; }
+.tr-challenge.ok { background: rgba(47, 143, 91, 0.14); }
+.tr-challenge.fail { background: rgba(200, 64, 46, 0.1); }
