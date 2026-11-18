@@ -332,6 +332,30 @@ export class GameView {
     this.updateChrome(s);
   }
 
+  /** Muestra una posición cualquiera (análisis), animando desde la actual si se pide. */
+  async showPosition(s: GameState, animate: boolean): Promise<void> {
+    this.state = s;
+    this.tokenAtCenter = false;
+    this.clearSelection();
+    if (animate && this.timeScale() > 0) await this.layer.transition(this.viewModel(s));
+    else this.layer.sync(this.viewModel(s));
+    this.scoreShown = s.players.map((p) => p.score);
+    this.boards.forEach((b, i) => b.setScore(s.players[i].score));
+    this.enders.clear();
+    this.refreshEnders(s, false);
+    this.updateChrome(s);
+  }
+
+  /** Resalta en el tablero del jugador la línea (o el suelo) donde acaba una jugada. */
+  markTarget(player: number, target: Target | null): void {
+    for (const b of this.boards) {
+      [...b.lines, b.floor].forEach((el) => el.classList.remove('replay-target'));
+    }
+    if (target === null) return;
+    const b = this.boards[player];
+    (target === 'floor' ? b.floor : b.lines[target]).classList.add('replay-target');
+  }
+
   setStatus(text: string, thinking = false): void {
     this.status.textContent = text;
     this.status.classList.toggle('thinking', thinking);

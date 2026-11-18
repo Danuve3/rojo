@@ -31,7 +31,7 @@ function lossReason(f: FactorName, d: number, mine: MoveAnalysis, best: MoveAnal
     case 'regaloRival': {
       const r = mine.rival;
       if (r && r.count > 0) {
-        return `Dejas ${colorCount(r.count, r.color)} a mano de ${rivalName(names, r.player)}, que puede usarlas para cerrar su línea.`;
+        return `Dejas ${colorCount(r.count, r.color)} a mano de ${rivalName(names, r.player)}: le sirve para cerrar su línea.`;
       }
       return 'Le facilitas la siguiente jugada a un rival.';
     }

@@ -119,6 +119,7 @@ export class CoachEngine {
     const label = labelFor(loss);
     const reasons = label === 'excelente' ? [] : explainLoss(mine, best, names);
     const tags = isMistake(label) ? [...new Set(topLossFactors(mine, best).slice(0, 2).map(({ f }) => TAG_OF_FACTOR[f]))] : [];
-    return { label, loss, best, mine, reasons, tags };
+    const gap = all.length > 1 ? Math.max(0, all[0].value - all[1].value) : 0;
+    return { label, loss, best, mine, reasons, tags, gap };
   }
 }

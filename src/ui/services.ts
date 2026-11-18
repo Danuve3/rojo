@@ -1,3 +1,4 @@
+import type { WorkerClient } from '../ai/client';
 import type { BotProvider, CoachProvider } from './gameController';
 import type { SoundName } from './gameView';
 
@@ -7,6 +8,10 @@ export const services = {
     throw new Error('bots sin configurar');
   },
   coach: (): CoachProvider | null => null,
+  /** Worker para el análisis de partidas terminadas. */
+  analysis: (): WorkerClient => {
+    throw new Error('análisis sin configurar');
+  },
   sound: (_name: SoundName, _opts?: { step?: number; bot?: boolean }): void => undefined,
   haptic: (_p: number | number[]): void => undefined,
 };

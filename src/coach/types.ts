@@ -37,6 +37,8 @@ export interface Verdict {
   mine: MoveAnalysis;
   reasons: string[];
   tags: ErrorTag[];
+  /** Ventaja de la mejor jugada sobre la segunda (puntos): grande = jugada única. */
+  gap?: number;
 }
 
 export interface MoveRecord {
@@ -49,4 +51,5 @@ export interface MoveRecord {
   label: VerdictLabel;
   reasons: string[];
   tags: ErrorTag[];
+  gap?: number;
 }

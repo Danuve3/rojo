@@ -9,6 +9,7 @@ import { setupPwa } from './ui/pwa';
 import { setupTheme } from './ui/theme';
 import { services } from './ui/services';
 import { installTileSprite } from './ui/tileArt';
+import { analysisScreen } from './ui/screens/analysis';
 import { endScreen } from './ui/screens/end';
 import { gameScreen } from './ui/screens/game';
 import { homeScreen } from './ui/screens/home';
@@ -25,6 +26,8 @@ async function boot(): Promise<void> {
   services.bots = () => botProvider(botWorker);
   let coachClient: CoachClient | null = null;
   services.coach = () => (coachClient ??= new CoachClient(new WorkerClient(createAiWorker)));
+  let analysisClient: WorkerClient | null = null;
+  services.analysis = () => (analysisClient ??= new WorkerClient(createAiWorker));
   services.sound = (name, opts) => playSound(name, opts);
   services.haptic = (p) => haptic(p, getSettings().haptics);
   const unlock = () => audio.unlock();
@@ -38,6 +41,7 @@ async function boot(): Promise<void> {
   app.register('progress', progressScreen);
   app.register('howto', howtoScreen);
   app.register('settings', settingsScreen);
+  app.register('analysis', analysisScreen);
   app.go('home');
   setupPwa();
 }

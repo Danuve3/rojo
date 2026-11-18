@@ -573,3 +573,33 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
   color: var(--ink); text-shadow: 0 0 3px var(--card), 0 0 2px var(--card); font-variant-numeric: tabular-nums;
 }
 .bars.wide .bar-row { grid-template-columns: 7.6em 1fr 3em; }
+
+/* ---------- análisis de partida ---------- */
+.coachbar.replay-bar { padding-block: 4px calc(6px + env(safe-area-inset-bottom)); }
+.replay { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.spark-wrap { background: var(--card); border-radius: 10px; box-shadow: var(--shadow); padding: 2px 4px; cursor: pointer; }
+.spark { width: 100%; height: 44px; display: block; }
+.sp-zero { stroke: var(--zero); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.sp-line { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.sp-cursor { stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.sp-moment { opacity: 0.22; }
+.sp-moment.tu_error, .sp-moment.golpe_rival { fill: var(--red); }
+.sp-moment.tu_acierto, .sp-moment.regalo_rival { fill: var(--green); }
+.rp-row { display: flex; align-items: center; gap: 6px; }
+.rp-mid { flex: 1; display: flex; flex-direction: column; align-items: center; line-height: 1.2; min-width: 0; }
+.rp-count { font-weight: 700; font-variant-numeric: tabular-nums; }
+.rp-eval { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rp-eval.good { color: var(--green); }
+.rp-eval.bad { color: var(--red); }
+.replay-info p { margin: 4px 0; font-size: 0.9rem; }
+.replay-info ul { margin: 2px 0; padding-left: 1.2em; }
+.moments { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.moment { border: 1px solid var(--edge); background: var(--card); border-radius: 999px; padding: 6px 10px; min-height: 36px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.moment.on { outline: 2px solid var(--accent); }
+.moment.tu_error, .moment.golpe_rival { color: var(--chip-pifia); }
+.moment.tu_acierto, .moment.regalo_rival { color: var(--chip-excelente); }
+.b-line.replay-target, .b-floor.replay-target { box-shadow: 0 0 0 2px var(--accent); background: var(--accent-soft, rgba(42, 93, 176, 0.1)); }
+.recent { list-style: none; padding: 0; margin: 0; }
+.recent li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--edge); }
+.recent li:first-child { border-top: 0; }
+.rg-main { display: flex; flex-direction: column; min-width: 0; }

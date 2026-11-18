@@ -126,6 +126,14 @@ Se activan en la configuración de partida, sección «Entrenamiento»:
 - **Precisión por fase y por decisión:** apertura (rondas 1–2), medio juego y final (última ronda); coger del centro o de un expositor; líneas cortas, largas o directo al suelo; con y sin ayudas.
 - **Mapa de calor del muro:** con qué frecuencia acaba llena cada casilla, frente a la referencia de un bot de nivel 9 (80 partidas contra nivel 7).
 
+### Análisis de partidas (v1.4)
+
+Cada partida terminada se guarda completa (las 40 últimas) y se puede repasar jugada a jugada desde el final de la partida o desde «Partidas recientes» en Progreso: avanzar y retroceder, ver cada posición, la valoración de cada jugada y la mejor alternativa.
+
+- **Valoración de todas las jugadas:** las tuyas ya vienen del entrenador; las de los bots se valoran en segundo plano con el mismo análisis (0,7 s por jugada) y se guardan.
+- **Balance de errores:** la curva baja con tus errores y sube con los de los rivales. Con juego perfecto la ventaja esperada solo cambia cuando alguien se equivoca, así que es la medida más fiel. Se probó antes una curva de «ventaja» por simulación y otra estática, pero saltaban al cerrar cada ronda y señalaban errores donde el entrenador no los veía.
+- **Momentos críticos:** tus errores más caros, los regalos de los rivales y las jugadas únicas (la mejor por al menos 2 puntos sobre la segunda) que encontraste tú o un rival.
+
 ## Decisiones sobre reglas ambiguas
 
 - **Línea llena:** una línea de patrón completa no es un destino válido (aunque sea del mismo color); para tirar losetas a propósito está el suelo.

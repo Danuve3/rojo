@@ -8,6 +8,8 @@ import { barList, lineChart } from '../charts';
 import { h } from '../dom';
 import { screen } from './common';
 import { trainingProgress } from '../trainingSummary';
+import { fullGameIds } from '../../storage/fullgames';
+import { openAnalysis } from './analysis';
 import { bucketsCard, eloCard, heatmapCard } from '../progressStats';
 import { LEVEL_NAMES } from './setup';
 
@@ -41,6 +43,24 @@ function improvementsList(games: HistoryEntry[]): HTMLElement {
       h('b', {}, i.title),
       h('p', { class: 'small muted' }, i.why),
       h('p', { class: 'small todo' }, h('span', { class: 'todo-mark', 'aria-hidden': 'true' }, '→ '), i.todo)))));
+}
+
+function recentGames(games: HistoryEntry[], analyzable: Set<number>, app: App): HTMLElement {
+  const recent = games.slice(-8).reverse();
+  return h('section', { class: 'card' },
+    h('h2', {}, 'Partidas recientes'),
+    h('ul', { class: 'recent' }, ...recent.map((g) => {
+      const opp = g.opponents.map((o) => `${o.name} (nv ${o.level})`).join(', ');
+      const can = g.id !== undefined && analyzable.has(g.id);
+      const btn = can ? h('button', { class: 'btn small-btn' }, 'Analizar') : null;
+      btn?.addEventListener('click', () => openAnalysis(app, g.id as number, 'progress'));
+      return h('li', {},
+        h('div', { class: 'rg-main' },
+          h('b', {}, `${g.won ? 'Victoria' : 'Derrota'} · ${g.myScore} puntos`),
+          h('span', { class: 'muted small' }, `${new Date(g.date).toLocaleDateString('es-ES')} · contra ${opp}`)),
+        btn);
+    })),
+    analyzable.size ? null : h('p', { class: 'muted small' }, 'El análisis jugada a jugada está disponible para las partidas que termines a partir de ahora.'));
 }
 
 function stat(label: string, value: string): HTMLElement {
@@ -88,7 +108,7 @@ function errorsSection(games: HistoryEntry[]): HTMLElement {
 export function progressScreen(root: HTMLElement, app: App): void {
   const body = h('div', { class: 'stack' }, h('p', { class: 'muted' }, 'Cargando…'));
   root.append(screen('Progreso', app, body));
-  void loadHistory().then((games) => {
+  void Promise.all([loadHistory(), fullGameIds()]).then(([games, analyzable]) => {
     if (!games.length) {
       body.replaceChildren(h('section', { class: 'card' }, h('p', {}, 'Aún no has terminado ninguna partida. Cuando lo hagas, aquí verás tu evolución.')));
       return;
@@ -105,6 +125,7 @@ export function progressScreen(root: HTMLElement, app: App): void {
         stat('puntos de media', avg.toFixed(0)),
         stat('precisión (últimas 10)', acc === null ? '—' : `${Math.round(acc)}%`)),
       eloCard(games),
+      recentGames(games, analyzable, app),
       trainingProgress(games),
       h('section', { class: 'card' }, h('h2', {}, 'Precisión'), accuracySection(games)),
       bucketsCard(games),

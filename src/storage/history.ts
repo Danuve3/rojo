@@ -33,8 +33,10 @@ export interface HistoryEntry {
   };
 }
 
-export function saveHistory(e: HistoryEntry): Promise<void> {
-  return addRecord(GAMES, e);
+/** Guarda la entrada del historial y devuelve su clave. */
+export async function saveHistory(e: HistoryEntry): Promise<number | null> {
+  const key = await addRecord(GAMES, e);
+  return typeof key === 'number' ? key : null;
 }
 
 export async function loadHistory(): Promise<HistoryEntry[]> {

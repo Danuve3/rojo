@@ -12,6 +12,7 @@ import { kvDelete, kvSet } from '../storage/db';
 import { getSettings } from '../storage/settings';
 import { summarize } from '../coach/summary';
 import { isMistake } from '../coach/verdict';
+import { saveFullGame } from '../storage/fullgames';
 import { saveHistory } from '../storage/history';
 import { HUMAN, type TrainingConfig, trainingOf } from './config';
 import { wait } from './dom';
@@ -404,6 +405,7 @@ export class GameController {
       label: v.label,
       reasons: v.reasons,
       tags: v.tags,
+      gap: v.gap,
     });
     this.save();
     this.refreshChallenge();
@@ -452,7 +454,11 @@ export class GameController {
       await Promise.race([Promise.all([...this.pendingRates]), wait(12000)]);
     }
     if (this.destroyed) return;
-    await saveHistory(summarize(this.game));
+    const id = await saveHistory(summarize(this.game));
+    if (id !== null) {
+      this.game.historyId = id;
+      await saveFullGame(id, this.game);
+    }
     await kvDelete('current');
     this.deps.onFinished(this.game);
   }

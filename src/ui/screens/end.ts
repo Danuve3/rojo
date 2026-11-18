@@ -6,6 +6,7 @@ import { h } from '../dom';
 import type { SavedGame } from '../session';
 import { screen } from './common';
 import { reviewSection } from '../review';
+import { openAnalysis } from './analysis';
 import { trainingCard } from '../trainingSummary';
 
 export function endScreen(root: HTMLElement, app: App): void {
@@ -19,6 +20,8 @@ export function endScreen(root: HTMLElement, app: App): void {
     const order = g.state.players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
     const again = h('button', { class: 'btn primary' }, 'Otra partida');
     again.addEventListener('click', () => app.go('setup'));
+    const analyze = g.historyId !== undefined ? h('button', { class: 'btn' }, 'Análisis jugada a jugada') : null;
+    analyze?.addEventListener('click', () => openAnalysis(app, g.historyId as number, 'end'));
     const home = h('button', { class: 'btn' }, 'Inicio');
     home.addEventListener('click', () => app.go('home'));
     root.append(screen(won ? '¡Victoria!' : 'Fin de la partida', app,
@@ -31,6 +34,7 @@ export function endScreen(root: HTMLElement, app: App): void {
         }))),
       trainingCard(g),
       g.config.coach.enabled && g.config.coach.review ? reviewSection(g) : null,
+      analyze,
       h('div', { class: 'row-btns' }, home, again)));
   });
 }

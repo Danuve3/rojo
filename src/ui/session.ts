@@ -35,4 +35,6 @@ export interface SavedGame {
   /** Reto activo de la partida (v1.2+). */
   challenge?: Challenge;
   training?: TrainingLog;
+  /** Clave de la entrada del historial (al terminar). */
+  historyId?: number;
 }
