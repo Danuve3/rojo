@@ -960,16 +960,19 @@ export class GameView {
     return new Promise((resolve) => {
       const done = (v: number | null) => {
         this.askEl.hidden = true;
+        this.askEl.classList.remove('bottom', 'compact');
         resolve(v);
       };
-      const skip = h('button', { class: 'btn small-btn ghost' }, 'Saltar');
+      const skip = h('button', { class: 'btn small-btn ghost', 'aria-label': 'Saltar la pregunta' }, 'Saltar');
       skip.addEventListener('click', () => done(null));
-      const opts = h('div', { class: 'ask-opts' }, ...options.map((o) => {
+      const opts = h('div', { class: 'ask-opts with-skip' }, ...options.map((o) => {
         const b = h('button', { class: 'btn small-btn' }, String(o));
         b.addEventListener('click', () => done(o));
         return b;
-      }));
-      this.askEl.replaceChildren(h('p', {}, h('b', {}, question)), opts, skip);
+      }), skip);
+      this.askEl.replaceChildren(h('p', { class: 'ask-q' }, h('b', {}, question)), opts);
+      // Abajo y compacto: expositores, centro y casi todo tu muro quedan a la vista para contar.
+      this.askEl.classList.add('bottom', 'compact');
       this.askEl.hidden = false;
     });
   }

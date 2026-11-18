@@ -631,3 +631,7 @@ input[type='range'] { width: 100%; min-height: 44px; accent-color: var(--accent)
 .ask-panel.bottom { top: auto; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); transform: none; }
 .ask-opts.two { grid-template-columns: 1fr 1fr; }
 .table.guessing .factory, .table.guessing .center { box-shadow: 0 0 0 3px var(--accent), 0 3px 8px var(--factory-shadow); }
+
+.ask-panel.bottom.compact { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); padding: 10px 12px; gap: 8px; }
+.ask-panel.compact .ask-q { font-size: 0.92rem; }
+.ask-opts.with-skip { grid-template-columns: repeat(4, 1fr) auto; }
