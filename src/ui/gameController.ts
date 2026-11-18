@@ -13,6 +13,8 @@ import { getSettings } from '../storage/settings';
 import { summarize } from '../coach/summary';
 import { isMistake } from '../coach/verdict';
 import { saveFullGame } from '../storage/fullgames';
+import { loadFinals, saveCard, saveFinals } from '../storage/training';
+import { newCard } from '../coach/training/srs';
 import { saveHistory } from '../storage/history';
 import { HUMAN, type TrainingConfig, trainingOf } from './config';
 import { wait } from './dom';
@@ -408,6 +410,7 @@ export class GameController {
       gap: v.gap,
     });
     this.save();
+    if (isMistake(v.label)) void saveCard(newCard(`${this.game.id}-${before.turn}`, before, m, v.best.move, v.loss, v.label, v.tags));
     this.refreshChallenge();
     const c = this.game.config.coach;
     if (isMistake(v.label) && this.secondChance) return v;
@@ -454,10 +457,15 @@ export class GameController {
       await Promise.race([Promise.all([...this.pendingRates]), wait(12000)]);
     }
     if (this.destroyed) return;
-    const id = await saveHistory(summarize(this.game));
-    if (id !== null) {
-      this.game.historyId = id;
-      await saveFullGame(id, this.game);
+    if (this.game.config.mode === 'final') {
+      const f = await loadFinals();
+      await saveFinals({ played: f.played + 1, won: f.won + (won ? 1 : 0) });
+    } else {
+      const id = await saveHistory(summarize(this.game));
+      if (id !== null) {
+        this.game.historyId = id;
+        await saveFullGame(id, this.game);
+      }
     }
     await kvDelete('current');
     this.deps.onFinished(this.game);

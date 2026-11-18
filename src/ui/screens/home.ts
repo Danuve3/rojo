@@ -42,6 +42,7 @@ export function homeScreen(root: HTMLElement, app: App): () => void {
     h('nav', { class: 'menu' },
       btn('Nueva partida', 'setup', true),
       cont,
+      btn('Entrenar', 'train'),
       btn('Progreso', 'progress'),
       btn('Cómo jugar', 'howto'),
       btn('Ajustes', 'settings')),

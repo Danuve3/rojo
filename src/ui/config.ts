@@ -50,6 +50,8 @@ export interface GameConfig {
   seed: number;
   /** Ausente en partidas guardadas antes de la v1.2. */
   training?: TrainingConfig;
+  /** 'final': partida del entrenador de finales (no cuenta en el historial). */
+  mode?: 'normal' | 'final';
 }
 
 export function trainingOf(c: GameConfig): TrainingConfig {

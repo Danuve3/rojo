@@ -134,6 +134,17 @@ Cada partida terminada se guarda completa (las 40 últimas) y se puede repasar j
 - **Balance de errores:** la curva baja con tus errores y sube con los de los rivales. Con juego perfecto la ventaja esperada solo cambia cuando alguien se equivoca, así que es la medida más fiel. Se probó antes una curva de «ventaja» por simulación y otra estática, pero saltaban al cerrar cada ronda y señalaban errores donde el entrenador no los veía.
 - **Momentos críticos:** tus errores más caros, los regalos de los rivales y las jugadas únicas (la mejor por al menos 2 puntos sobre la segunda) que encontraste tú o un rival.
 
+### Entrenar (v1.5)
+
+Pantalla nueva desde el inicio:
+
+- **Repaso de tus errores:** cada imprecisión, error o pifia de tus partidas (con el entrenador activado) se guarda como tarjeta. Vuelve al día siguiente como ejercicio; si aciertas, tarda más en volver (3 días, luego ×2,5…); si fallas, vuelve mañana. Tres aciertos seguidos la dan por aprendida.
+- **Puzle del día:** tres posiciones diarias, generadas en el worker a partir de partidas entre bots de nivel 6, donde una jugada es claramente mejor (confirmado con el análisis del entrenador). Racha de días seguidos y dificultad de 1 a 5 que sube si las resuelves todas y baja si no aciertas ninguna.
+- **Entrenador de finales:** empiezas al comienzo de la última ronda de una partida simulada, con alguien que todavía puede ganar, contra bots de tu nivel de Elo. No cuenta en el historial; se lleva la cuenta de finales ganados.
+- **Lecciones:** seis temas (suelo, adyacencia, bonus, denegación, ficha inicial y final) con explicación, consejos y cinco ejercicios cada uno. Los ejercicios se generan con `npx tsx scripts/genLessons.ts` y se guardan en `src/coach/training/lessons-data.json`. Aciertas 4 de 5 para desbloquear la siguiente.
+
+En todos los ejercicios cuenta como acierto una jugada que pierde menos de 0,5 puntos frente a la mejor; las que no aciertas a la primera pasan al repaso.
+
 ## Decisiones sobre reglas ambiguas
 
 - **Línea llena:** una línea de patrón completa no es un destino válido (aunque sea del mismo color); para tirar losetas a propósito está el suelo.

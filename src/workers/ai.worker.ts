@@ -2,6 +2,7 @@
 import { chooseBotMove } from '../ai/bot';
 import { createRng } from '../engine';
 import { CoachEngine } from '../coach/engine';
+import { generateFinal, generatePuzzles } from '../coach/training/generate';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
 declare const self: DedicatedWorkerGlobalScope;
@@ -26,6 +27,11 @@ async function handle(req: WorkerRequest): Promise<void> {
     } else if (req.type === 'analyze') {
       const a = await coach.analyze(req.state, req.budgetMs, () => cancelled.has(req.id));
       reply({ id: req.id, ok: true, result: a });
+    } else if (req.type === 'genPuzzles') {
+      const out = await generatePuzzles({ seed: req.seed, count: req.count, minGap: req.minGap, timeMs: req.timeMs, analyzeMs: req.analyzeMs }, coach);
+      reply({ id: req.id, ok: true, result: out });
+    } else if (req.type === 'genFinal') {
+      reply({ id: req.id, ok: true, result: generateFinal(req.seed, req.players) });
     } else if (req.type === 'rate') {
       const v = await coach.rate(req.state, req.move, req.names, req.budgetMs);
       reply({ id: req.id, ok: true, result: v });

@@ -11,6 +11,8 @@ import { services } from './ui/services';
 import { installTileSprite } from './ui/tileArt';
 import { analysisScreen } from './ui/screens/analysis';
 import { endScreen } from './ui/screens/end';
+import { exerciseScreen } from './ui/screens/exercise';
+import { lessonScreen, trainScreen } from './ui/screens/train';
 import { gameScreen } from './ui/screens/game';
 import { homeScreen } from './ui/screens/home';
 import { howtoScreen } from './ui/screens/howto';
@@ -42,6 +44,9 @@ async function boot(): Promise<void> {
   app.register('howto', howtoScreen);
   app.register('settings', settingsScreen);
   app.register('analysis', analysisScreen);
+  app.register('train', trainScreen);
+  app.register('lesson', lessonScreen);
+  app.register('exercise', exerciseScreen);
   app.go('home');
   setupPwa();
 }

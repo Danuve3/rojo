@@ -19,11 +19,18 @@ export function endScreen(root: HTMLElement, app: App): void {
     const won = w.includes(HUMAN);
     const order = g.state.players.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score);
     const again = h('button', { class: 'btn primary' }, 'Otra partida');
-    again.addEventListener('click', () => app.go('setup'));
+    again.addEventListener('click', () => app.go(g.config.mode === 'final' ? 'train' : 'setup'));
     const analyze = g.historyId !== undefined ? h('button', { class: 'btn' }, 'Análisis jugada a jugada') : null;
     analyze?.addEventListener('click', () => openAnalysis(app, g.historyId as number, 'end'));
     const home = h('button', { class: 'btn' }, 'Inicio');
     home.addEventListener('click', () => app.go('home'));
+    const isFinal = g.config.mode === 'final';
+    const finalCard = isFinal
+      ? h('section', { class: `card training` }, h('div', { class: `tr-challenge ${won ? 'ok' : 'fail'}` },
+        h('b', {}, won ? '🏁 Final ganado' : '🏁 Final perdido'),
+        h('span', {}, won ? 'Supiste cerrar la partida.' : 'Repasa la última ronda en el entrenador de finales y prueba otra vez.')))
+      : null;
+    if (isFinal) again.textContent = 'Otro final';
     root.append(screen(won ? '¡Victoria!' : 'Fin de la partida', app,
       h('section', { class: `card result ${won ? 'won' : 'lost'}` },
         h('ol', { class: 'standings' }, ...order.map(({ p, i }) => {
@@ -32,7 +39,8 @@ export function endScreen(root: HTMLElement, app: App): void {
             h('span', {}, cfg.name, cfg.kind === 'bot' ? h('small', {}, ` nv ${cfg.level}`) : null),
             h('b', {}, `${p.score}`));
         }))),
-      trainingCard(g),
+      finalCard,
+      isFinal ? null : trainingCard(g),
       g.config.coach.enabled && g.config.coach.review ? reviewSection(g) : null,
       analyze,
       h('div', { class: 'row-btns' }, home, again)));
